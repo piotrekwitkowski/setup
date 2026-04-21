@@ -38,6 +38,44 @@ if (!exists("gh")) {
   ok("gh", out("gh --version").split(" ")[2]);
 }
 
+// jq
+step("jq");
+if (!exists("jq")) {
+  console.log("Installing...");
+  run("brew install jq");
+} else {
+  ok("jq", out("jq --version").replace("jq-", ""));
+}
+
+// AWS CLI
+step("AWS CLI");
+if (!exists("aws")) {
+  console.log("Installing...");
+  run("brew install awscli");
+} else {
+  ok("aws", out("aws --version").split(" ")[0].split("/")[1]);
+}
+
+// AWS CDK
+step("AWS CDK");
+const cdkVersion = spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
+if (!cdkVersion) {
+  console.log("Installing...");
+  run("npm install -g aws-cdk");
+} else {
+  ok("cdk", cdkVersion);
+}
+
+// Cloudflare CLI
+step("Cloudflare CLI");
+const wranglerVersion = spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim().split(" ")[1];
+if (!wranglerVersion) {
+  console.log("Installing...");
+  run("npm install -g wrangler");
+} else {
+  ok("wrangler", wranglerVersion);
+}
+
 // Kiro IDE (install before Claude/OpenCode so AWS SSO is configured)
 step("Kiro IDE");
 if (!existsSync("/Applications/Kiro.app")) {
