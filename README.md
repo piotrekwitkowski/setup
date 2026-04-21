@@ -21,5 +21,5 @@ bash ~/path/to/setup/bootstrap.sh
 | Zoom | app | pkg |
 | aws-cdk | CLI | npm -g |
 | Claude Code | CLI | npm -g |
-| OpenCode | CLI | curl |
+| OpenCode | CLI | npm -g |
 | Wrangler | CLI | npm -g |

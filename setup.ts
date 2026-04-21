@@ -139,11 +139,12 @@ if (!claudeVersion) {
 }
 
 step("OpenCode");
-if (!exists("opencode")) {
+const opencodeVersion = spawnSync("opencode --version", { shell: true }).stdout?.toString().trim();
+if (!opencodeVersion) {
   console.log("Installing...");
-  run("curl -fsSL https://opencode.ai/install | bash");
+  run("npm install -g opencode-ai");
 } else {
-  ok("opencode", out("opencode --version 2>/dev/null"));
+  ok("opencode", opencodeVersion);
 }
 ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInZprofile(`eval "$(fnm env)"`);
