@@ -8,12 +8,15 @@ const exists = (cmd: string) => {
   return r.status === 0;
 };
 
+let zprofileModified = false;
+
 const ensureInZprofile = (line: string) => {
   const zprofile = `${homedir()}/.zprofile`;
   const contents = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
   if (!contents.includes(line)) {
     writeFileSync(zprofile, contents + `\n${line}\n`);
     console.log(`Added to ~/.zprofile: ${line}`);
+    zprofileModified = true;
   } else {
     console.log(`Already in ~/.zprofile: ${line}`);
   }
@@ -81,5 +84,5 @@ if (!existsSync("/Applications/Kiro.app")) {
   console.log("Already installed: Kiro.app");
 }
 
-
-console.log("Run `source ~/.zprofile` to apply PATH changes in the current session.");
+step("Done!");
+if (zprofileModified) console.log("Run `source ~/.zprofile` to apply PATH changes in the current session.");
