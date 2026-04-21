@@ -120,7 +120,7 @@ if (!existsSync("/Applications/zoom.us.app")) {
 
 // --- npm -g tools ---
 
-step("aws-cdk");
+step("AWS CDK");
 const cdkVersion = spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
 if (!cdkVersion) {
   console.log("Installing...");
