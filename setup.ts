@@ -97,12 +97,12 @@ if (!existsSync("/Applications/zoom.us.app")) {
 
 // Claude Code
 step("Claude Code");
-const claudeInstalled = spawnSync("npm", ["ls", "-g", "@anthropic-ai/claude-code"], { shell: true }).status === 0;
-if (!claudeInstalled) {
+const claudeVersion = spawnSync("claude --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
+if (!claudeVersion) {
   console.log("Installing...");
   run("npm install -g @anthropic-ai/claude-code");
 } else {
-  ok("claude", out("claude --version 2>/dev/null").split(" ")[0]);
+  ok("claude", claudeVersion);
 }
 
 // OpenCode
