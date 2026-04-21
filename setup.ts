@@ -159,6 +159,7 @@ if (!wranglerVersion) {
 } else {
   ok("wrangler", wranglerVersion);
 }
+ensureInZprofile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 
 step("Done!");
 if (zprofileModified) console.log("    Run `source ~/.zprofile` to apply PATH changes.");
