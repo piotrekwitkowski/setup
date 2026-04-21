@@ -3,7 +3,7 @@
 Mac setup script. Run on a new machine:
 
 ```sh
-bash ~/path/to/setup/bootstrap.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/bootstrap.sh)
 ```
 
 ## What gets installed
