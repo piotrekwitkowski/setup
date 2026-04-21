@@ -89,19 +89,20 @@ if (!existsSync("/Applications/zoom.us.app")) {
   run(`curl -fsSL "https://zoom.us/client/latest/ZoomInstallerIT.pkg" -o /tmp/zoom.pkg`);
   run(`sudo installer -pkg /tmp/zoom.pkg -target /`);
   run(`rm /tmp/zoom.pkg`);
-  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleShortVersionString"));
+  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
 } else {
-  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleShortVersionString"));
+  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
 }
 
 
 // Claude Code
 step("Claude Code");
-if (!exists("claude")) {
+const claudeBin = out("npm root -g 2>/dev/null").replace("node_modules", "bin/claude");
+if (!existsSync(claudeBin)) {
   console.log("Installing...");
   run("npm install -g @anthropic-ai/claude-code");
 } else {
-  ok("claude", out("claude --version 2>/dev/null").split(" ")[0]);
+  ok("claude", out(`${claudeBin} --version 2>/dev/null`).split(" ")[0]);
 }
 
 // OpenCode
