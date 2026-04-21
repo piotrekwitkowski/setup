@@ -19,7 +19,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Kiro | app | dmg |
 | Vowen | app | dmg |
 | Zoom | app | pkg |
-| aws-cdk | CLI | npm -g |
+| AWS CDK | CLI | npm -g |
 | Claude Code | CLI | npm -g |
 | OpenCode | CLI | npm -g |
 | Wrangler | CLI | npm -g |
