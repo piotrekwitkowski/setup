@@ -21,4 +21,5 @@ nvm use --lts
 echo "Node $(node --version), npm $(npm --version)"
 
 # Hand off to TypeScript setup
-npx --yes tsx setup.ts
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+npx --yes tsx "$SCRIPT_DIR/setup.ts"
