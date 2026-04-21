@@ -19,7 +19,8 @@ const ensureInZprofile = (line: string) => {
   }
 };
 
-// Homebrew
+// --- Homebrew ---
+
 step("Homebrew");
 if (!exists("brew")) {
   console.log("Installing...");
@@ -29,25 +30,8 @@ if (!exists("brew")) {
   ok("brew", out("brew --version").split(" ")[1]);
 }
 
-// gh CLI
-step("gh CLI");
-if (!exists("gh")) {
-  console.log("Installing...");
-  run("brew install gh");
-} else {
-  ok("gh", out("gh --version").split(" ")[2]);
-}
+// --- Brew tools ---
 
-// jq
-step("jq");
-if (!exists("jq")) {
-  console.log("Installing...");
-  run("brew install jq");
-} else {
-  ok("jq", out("jq --version").replace("jq-", ""));
-}
-
-// AWS CLI
 step("AWS CLI");
 if (!exists("aws")) {
   console.log("Installing...");
@@ -56,28 +40,33 @@ if (!exists("aws")) {
   ok("aws", out("aws --version").split(" ")[0].split("/")[1]);
 }
 
-// AWS CDK
-step("AWS CDK");
-const cdkVersion = spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
-if (!cdkVersion) {
+step("gh");
+if (!exists("gh")) {
   console.log("Installing...");
-  run("npm install -g aws-cdk");
+  run("brew install gh");
 } else {
-  ok("cdk", cdkVersion);
+  ok("gh", out("gh --version").split(" ")[2]);
 }
 
-// Cloudflare CLI
-step("Cloudflare CLI");
-const wranglerVersion = spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim().split(" ")[1];
-if (!wranglerVersion) {
+step("Go");
+if (!exists("go")) {
   console.log("Installing...");
-  run("npm install -g wrangler");
+  run("brew install go");
 } else {
-  ok("wrangler", wranglerVersion);
+  ok("go", out("go version").split(" ")[2].replace("go", ""));
 }
 
-// Kiro IDE (install before Claude/OpenCode so AWS SSO is configured)
-step("Kiro IDE");
+step("jq");
+if (!exists("jq")) {
+  console.log("Installing...");
+  run("brew install jq");
+} else {
+  ok("jq", out("jq --version").replace("jq-", ""));
+}
+
+// --- Apps ---
+
+step("Kiro");
 if (!existsSync("/Applications/Kiro.app")) {
   console.log("Installing...");
   const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
@@ -89,8 +78,9 @@ if (!existsSync("/Applications/Kiro.app")) {
   const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
   run(`curl -fsSL "${url}" -o /tmp/${dmg}`);
   run(`hdiutil attach /tmp/${dmg} -quiet`);
-  run(`cp -R "/Volumes/Kiro/Kiro.app" /Applications/`);
-  run(`hdiutil detach "/Volumes/Kiro" -quiet`);
+  const volume = out("ls /Volumes | grep -i kiro");
+  run(`cp -R "/Volumes/${volume}/Kiro.app" /Applications/`);
+  run(`hdiutil detach "/Volumes/${volume}" -quiet`);
   run(`rm /tmp/${dmg}`);
   ok("Kiro", version);
   console.log("    Sign in with AWS in Kiro to configure SSO before continuing.");
@@ -99,7 +89,6 @@ if (!existsSync("/Applications/Kiro.app")) {
 }
 ensureInZprofile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 
-// Vowen
 step("Vowen");
 if (!existsSync("/Applications/Vowen.app")) {
   console.log("Installing...");
@@ -110,7 +99,7 @@ if (!existsSync("/Applications/Vowen.app")) {
   const dmg = `Vowen-${version}-arm64.dmg`;
   run(`curl -fsSL "https://assets.vowen.ai/${dmg}" -o /tmp/${dmg}`);
   run(`hdiutil attach /tmp/${dmg} -quiet`);
-  const volume = out(`ls /Volumes | grep -i vowen`);
+  const volume = out("ls /Volumes | grep -i vowen");
   run(`cp -R "/Volumes/${volume}/Vowen.app" /Applications/`);
   run(`hdiutil detach "/Volumes/${volume}" -quiet`);
   run(`rm /tmp/${dmg}`);
@@ -119,21 +108,27 @@ if (!existsSync("/Applications/Vowen.app")) {
   ok("Vowen", out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString"));
 }
 
-
-// Zoom
 step("Zoom");
 if (!existsSync("/Applications/zoom.us.app")) {
   console.log("Installing...");
   run(`curl -fsSL "https://zoom.us/client/latest/ZoomInstallerIT.pkg" -o /tmp/zoom.pkg`);
   run(`sudo installer -pkg /tmp/zoom.pkg -target /`);
   run(`rm /tmp/zoom.pkg`);
-  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
 } else {
   ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
 }
 
+// --- npm -g tools ---
 
-// Claude Code
+step("aws-cdk");
+const cdkVersion = spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
+if (!cdkVersion) {
+  console.log("Installing...");
+  run("npm install -g aws-cdk");
+} else {
+  ok("cdk", cdkVersion);
+}
+
 step("Claude Code");
 const claudeVersion = spawnSync("claude --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
 if (!claudeVersion) {
@@ -143,7 +138,6 @@ if (!claudeVersion) {
   ok("claude", claudeVersion);
 }
 
-// OpenCode
 step("OpenCode");
 if (!exists("opencode")) {
   console.log("Installing...");
@@ -153,6 +147,15 @@ if (!exists("opencode")) {
 }
 ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInZprofile(`eval "$(fnm env)"`);
+
+step("Wrangler");
+const wranglerVersion = spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim();
+if (!wranglerVersion) {
+  console.log("Installing...");
+  run("npm install -g wrangler");
+} else {
+  ok("wrangler", wranglerVersion);
+}
 
 step("Done!");
 if (zprofileModified) console.log("    Run `source ~/.zprofile` to apply PATH changes.");
