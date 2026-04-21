@@ -97,12 +97,12 @@ if (!existsSync("/Applications/zoom.us.app")) {
 
 // Claude Code
 step("Claude Code");
-const claudeBin = out("npm root -g 2>/dev/null").replace("node_modules", "bin/claude");
-if (!existsSync(claudeBin)) {
+const claudeInstalled = spawnSync("npm", ["ls", "-g", "@anthropic-ai/claude-code"], { shell: true }).status === 0;
+if (!claudeInstalled) {
   console.log("Installing...");
   run("npm install -g @anthropic-ai/claude-code");
 } else {
-  ok("claude", out(`${claudeBin} --version 2>/dev/null`).split(" ")[0]);
+  ok("claude", out("claude --version 2>/dev/null").split(" ")[0]);
 }
 
 // OpenCode
