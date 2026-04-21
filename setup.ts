@@ -83,6 +83,7 @@ if (!existsSync("/Applications/Kiro.app")) {
 } else {
   console.log("Already installed: Kiro.app");
 }
+ensureInZprofile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 
 step("Done!");
 if (zprofileModified) console.log("Run `source ~/.zprofile` to apply PATH changes in the current session.");
