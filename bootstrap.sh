@@ -31,8 +31,9 @@ echo "    node $(node --version | tr -d 'v'), npm $(npm --version)"
 
 # Hand off to TypeScript setup
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ "$SCRIPT_DIR" == /dev/fd* ]]; then
-  curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/setup.ts | npx --yes tsx --input-type=module
-else
-  npx --yes tsx "$SCRIPT_DIR/setup.ts"
+SETUP_TS="$SCRIPT_DIR/setup.ts"
+if [[ ! -f "$SETUP_TS" ]]; then
+  SETUP_TS="/tmp/setup.ts"
+  curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/setup.ts -o "$SETUP_TS"
 fi
+npx --yes tsx "$SETUP_TS"
