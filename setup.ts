@@ -1,9 +1,22 @@
 import { execSync, spawnSync } from "child_process";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { homedir } from "os";
 
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
 const exists = (cmd: string) => {
   const r = spawnSync(`command -v ${cmd}`, { shell: true });
   return r.status === 0;
+};
+
+const ensureInZprofile = (line: string) => {
+  const zprofile = `${homedir()}/.zprofile`;
+  const contents = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
+  if (!contents.includes(line)) {
+    writeFileSync(zprofile, contents + `\n${line}\n`);
+    console.log(`Added to ~/.zprofile: ${line}`);
+  } else {
+    console.log(`Already in ~/.zprofile: ${line}`);
+  }
 };
 
 const step = (label: string) => console.log(`\n>>> ${label}`);
@@ -44,10 +57,7 @@ if (!exists("opencode")) {
 } else {
   console.log(`Already installed: ${execSync("opencode --version 2>/dev/null || echo unknown").toString().trim()}`);
 }
+ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 
 step("Done!");
-console.log(`
-Add to ~/.zprofile if not already present:
-
-  export PATH="$HOME/.opencode/bin:$PATH"
-`);
+console.log("Run `source ~/.zprofile` to apply PATH changes in the current session.");
