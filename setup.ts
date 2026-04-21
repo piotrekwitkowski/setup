@@ -9,14 +9,31 @@ const out = (cmd: string) => execSync(cmd).toString().trim();
 const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
 
-let zprofileModified = false;
+const zprofileLines = { evals: [], exports: [], aliases: [] };
 const ensureInZprofile = (line: string) => {
-  const zprofile = `${homedir()}/.zprofile`;
-  const contents = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
-  if (!contents.includes(line)) {
-    writeFileSync(zprofile, contents + `\n${line}\n`);
-    zprofileModified = true;
+  if (line.startsWith("eval ")) {
+    if (!zprofileLines.evals.includes(line)) zprofileLines.evals.push(line);
+  } else if (line.startsWith("export ")) {
+    if (!zprofileLines.exports.includes(line)) zprofileLines.exports.push(line);
+  } else if (line.startsWith("alias ")) {
+    if (!zprofileLines.aliases.includes(line)) zprofileLines.aliases.push(line);
   }
+};
+
+const writeZprofile = () => {
+  const zprofile = `${homedir()}/.zprofile`;
+  const existingContents = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
+  const newContents = [
+    ...zprofileLines.evals,
+    "",
+    ...zprofileLines.exports.sort(),
+    "",
+    ...zprofileLines.aliases
+  ].join("\n") + "\n";
+
+  const changed = existingContents !== newContents;
+  if (changed) writeFileSync(zprofile, newContents);
+  return changed;
 };
 
 // --- Homebrew ---
@@ -29,6 +46,7 @@ if (!exists("brew")) {
 } else {
   ok("brew", out("brew --version").split(" ")[1]);
 }
+ensureInZprofile(`eval "$(/opt/homebrew/bin/brew shellenv zsh)"`);
 
 // --- Brew tools ---
 
@@ -162,4 +180,4 @@ if (!wranglerVersion) {
 ensureInZprofile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 
 step("Done!");
-if (zprofileModified) console.log("    Run `source ~/.zprofile` to apply PATH changes.");
+if (writeZprofile()) console.log("    ~/.zprofile was updated. Restart terminal or run: source ~/.zprofile");
