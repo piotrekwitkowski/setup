@@ -61,7 +61,27 @@ if (!existsSync("/Applications/Kiro.app")) {
 }
 ensureInZprofile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 
-// Claude Code
+// Vowen
+step("Vowen");
+if (!existsSync("/Applications/Vowen.app")) {
+  console.log("Installing...");
+  const page = out("curl -fsSL https://vowen.ai/");
+  const match = page.match(/Vowen-([\d.]+)-arm64\.dmg/);
+  if (!match) throw new Error("Could not determine latest Vowen version");
+  const version = match[1];
+  const dmg = `Vowen-${version}-arm64.dmg`;
+  run(`curl -fsSL "https://assets.vowen.ai/${dmg}" -o /tmp/${dmg}`);
+  run(`hdiutil attach /tmp/${dmg} -quiet`);
+  const volume = out(`ls /Volumes | grep -i vowen`);
+  run(`cp -R "/Volumes/${volume}/Vowen.app" /Applications/`);
+  run(`hdiutil detach "/Volumes/${volume}" -quiet`);
+  run(`rm /tmp/${dmg}`);
+  ok("Vowen", version);
+} else {
+  ok("Vowen", out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString"));
+}
+
+
 step("Claude Code");
 if (!exists("claude")) {
   console.log("Installing...");
