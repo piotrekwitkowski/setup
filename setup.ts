@@ -59,5 +59,27 @@ if (!exists("opencode")) {
 }
 ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 
-step("Done!");
+// Kiro IDE
+step("Kiro IDE");
+if (!existsSync("/Applications/Kiro.app")) {
+  console.log("Installing Kiro IDE...");
+  const arch = execSync("uname -m").toString().trim() === "arm64" ? "arm64" : "x64";
+  const page = execSync("curl -fsSL https://kiro.dev/downloads/").toString();
+  const match = page.match(/Latest IDE([\d.]+)/);
+  if (!match) throw new Error("Could not determine latest Kiro version");
+  const version = match[1];
+  const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
+  const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
+  console.log(`Downloading Kiro ${version}...`);
+  run(`curl -fsSL "${url}" -o /tmp/${dmg}`);
+  run(`hdiutil attach /tmp/${dmg} -quiet`);
+  run(`cp -R "/Volumes/Kiro/Kiro.app" /Applications/`);
+  run(`hdiutil detach "/Volumes/Kiro" -quiet`);
+  run(`rm /tmp/${dmg}`);
+  console.log("Kiro installed to /Applications/Kiro.app");
+} else {
+  console.log("Already installed: Kiro.app");
+}
+
+
 console.log("Run `source ~/.zprofile` to apply PATH changes in the current session.");
