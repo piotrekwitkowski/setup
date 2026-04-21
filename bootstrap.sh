@@ -23,7 +23,7 @@ if ! fnm ls | grep -q "lts-latest"; then
   echo "Installing Node.js LTS..."
   fnm install --lts
 fi
-fnm use lts-latest 2>&1 | grep -v "Using Node"
+fnm use lts-latest 2>/dev/null || true
 
 echo ""
 echo ">>> Node"
