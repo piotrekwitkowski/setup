@@ -137,6 +137,8 @@ if (!claudeVersion) {
 } else {
   ok("claude", claudeVersion);
 }
+ensureInZprofile(`export CLAUDE_CODE_USE_BEDROCK=1`);
+ensureInZprofile(`export AWS_REGION=eu-west-2`);
 
 step("OpenCode");
 const opencodeVersion = spawnSync("opencode --version", { shell: true }).stdout?.toString().trim();
