@@ -82,6 +82,20 @@ if (!existsSync("/Applications/Vowen.app")) {
 }
 
 
+// Zoom
+step("Zoom");
+if (!existsSync("/Applications/zoom.us.app")) {
+  console.log("Installing...");
+  run(`curl -fsSL "https://zoom.us/client/latest/ZoomInstallerIT.pkg" -o /tmp/zoom.pkg`);
+  run(`sudo installer -pkg /tmp/zoom.pkg -target /`);
+  run(`rm /tmp/zoom.pkg`);
+  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleShortVersionString"));
+} else {
+  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleShortVersionString"));
+}
+
+
+// Claude Code
 step("Claude Code");
 if (!exists("claude")) {
   console.log("Installing...");
@@ -99,6 +113,7 @@ if (!exists("opencode")) {
   ok("opencode", out("opencode --version 2>/dev/null"));
 }
 ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
+ensureInZprofile(`eval "$(fnm env)"`);
 
 step("Done!");
 if (zprofileModified) console.log("    Run `source ~/.zprofile` to apply PATH changes.");

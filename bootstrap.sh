@@ -1,22 +1,29 @@
 #!/usr/bin/env bash
 set -e
 
-# Install nvm if missing
-if [ ! -d "$HOME/.nvm" ]; then
-  echo "Installing nvm..."
-  NVM_LATEST=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-  curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_LATEST}/install.sh" | bash
+# Install Homebrew if missing (needed for fnm)
+if ! command -v brew &>/dev/null; then
+  echo "Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+export PATH="/opt/homebrew/bin:$PATH"
 
-# Install latest LTS Node if not already installed via nvm
-if ! nvm ls --no-colors | grep -q "lts/"; then
+# Install fnm if missing
+if ! command -v fnm &>/dev/null; then
+  echo "Installing fnm..."
+  brew install fnm
+fi
+
+eval "$(fnm env)"
+
+# Install latest LTS Node if not already installed
+if ! fnm ls | grep -q "lts-latest"; then
   echo "Installing Node.js LTS..."
-  nvm install --lts
+  fnm install --lts
 fi
-nvm use --lts --silent
+fnm use lts-latest --silent 2>/dev/null || fnm use lts-latest
 
 echo ""
 echo ">>> Node"
