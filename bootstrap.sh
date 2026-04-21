@@ -11,12 +11,12 @@ fi
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Install latest LTS Node if not already active
-if ! command -v node &>/dev/null; then
+# Install latest LTS Node if not already installed via nvm
+if ! nvm ls --no-colors | grep -q "lts/"; then
   echo "Installing Node.js LTS..."
   nvm install --lts
-  nvm use --lts
 fi
+nvm use --lts
 
 echo "Node $(node --version), npm $(npm --version)"
 
