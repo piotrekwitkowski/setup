@@ -84,6 +84,14 @@ if (!exists("jq")) {
 
 // --- Apps ---
 
+step("Claude Desktop");
+if (!existsSync("/Applications/Claude.app")) {
+  console.log("Installing...");
+  run("brew install --cask claude");
+} else {
+  ok("Claude Desktop", out("defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString"));
+}
+
 step("Kiro");
 if (!existsSync("/Applications/Kiro.app")) {
   console.log("Installing...");

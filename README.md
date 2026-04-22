@@ -16,6 +16,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | gh | CLI | brew |
 | Go | language | brew |
 | jq | CLI | brew |
+| Claude Desktop | app | brew cask |
 | Kiro | app | dmg |
 | Vowen | app | dmg |
 | Zoom | app | pkg |
