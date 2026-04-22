@@ -11,27 +11,29 @@ const ok = (name: string, version: string) => console.log(`    ${name} ${version
 
 const zprofile = `${homedir()}/.zprofile`;
 const existingZprofile = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
-const zprofileLines = { evals: [], exports: [], aliases: [] };
+const evals: string[] = [];
+const envs: string[] = [];
+const aliases: string[] = [];
 const ensureInZprofile = (line: string) => {
   const already = existingZprofile.includes(line);
   console.log(`    ${already ? "✓" : "+"} ${line}`);
   if (line.startsWith("eval ")) {
-    if (!zprofileLines.evals.includes(line)) zprofileLines.evals.push(line);
+    if (!evals.includes(line)) evals.push(line);
   } else if (line.startsWith("export ")) {
-    if (!zprofileLines.exports.includes(line)) zprofileLines.exports.push(line);
+    if (!envs.includes(line)) envs.push(line);
   } else if (line.startsWith("alias ")) {
-    if (!zprofileLines.aliases.includes(line)) zprofileLines.aliases.push(line);
+    if (!aliases.includes(line)) aliases.push(line);
   }
 };
 
 const writeZprofile = () => {
   const existingContents = existingZprofile;
   const newContents = [
-    ...zprofileLines.evals,
+    ...evals,
     "",
-    ...zprofileLines.exports.sort(),
+    ...envs.sort(),
     "",
-    ...zprofileLines.aliases
+    ...aliases
   ].join("\n") + "\n";
 
   const changed = existingContents !== newContents;
