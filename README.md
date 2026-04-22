@@ -24,3 +24,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Claude Code | CLI | npm -g |
 | OpenCode | CLI | npm -g |
 | Wrangler | CLI | npm -g |
+
+## Shell configuration
+
+Configures `~/.zprofile` with environment variables, PATH updates, and aliases.
