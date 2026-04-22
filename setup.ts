@@ -9,8 +9,12 @@ const out = (cmd: string) => execSync(cmd).toString().trim();
 const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
 
+const zprofile = `${homedir()}/.zprofile`;
+const existingZprofile = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
 const zprofileLines = { evals: [], exports: [], aliases: [] };
 const ensureInZprofile = (line: string) => {
+  const already = existingZprofile.includes(line);
+  console.log(`    ${already ? "✓" : "+"} ${line}`);
   if (line.startsWith("eval ")) {
     if (!zprofileLines.evals.includes(line)) zprofileLines.evals.push(line);
   } else if (line.startsWith("export ")) {
@@ -21,8 +25,7 @@ const ensureInZprofile = (line: string) => {
 };
 
 const writeZprofile = () => {
-  const zprofile = `${homedir()}/.zprofile`;
-  const existingContents = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
+  const existingContents = existingZprofile;
   const newContents = [
     ...zprofileLines.evals,
     "",
@@ -46,7 +49,6 @@ if (!exists("brew")) {
 } else {
   ok("brew", out("brew --version").split(" ")[1]);
 }
-ensureInZprofile(`eval "$(/opt/homebrew/bin/brew shellenv zsh)"`);
 
 // --- Brew tools ---
 
@@ -113,7 +115,6 @@ if (!existsSync("/Applications/Kiro.app")) {
 } else {
   ok("Kiro", out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString"));
 }
-ensureInZprofile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 
 step("Vowen");
 if (!existsSync("/Applications/Vowen.app")) {
@@ -163,8 +164,6 @@ if (!claudeVersion) {
 } else {
   ok("claude", claudeVersion);
 }
-ensureInZprofile(`export CLAUDE_CODE_USE_BEDROCK=1`);
-ensureInZprofile(`export AWS_REGION=eu-west-2`);
 
 step("OpenCode");
 const opencodeVersion = spawnSync("opencode --version", { shell: true }).stdout?.toString().trim();
@@ -174,8 +173,6 @@ if (!opencodeVersion) {
 } else {
   ok("opencode", opencodeVersion);
 }
-ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
-ensureInZprofile(`eval "$(fnm env)"`);
 
 step("Wrangler");
 const wranglerVersion = spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim();
@@ -185,7 +182,18 @@ if (!wranglerVersion) {
 } else {
   ok("wrangler", wranglerVersion);
 }
+
+// --- .zprofile ---
+
+step(".zprofile");
+ensureInZprofile(`eval "$(/opt/homebrew/bin/brew shellenv zsh)"`);
+ensureInZprofile(`eval "$(fnm env)"`);
+ensureInZprofile(`export AWS_REGION=eu-west-2`);
+ensureInZprofile(`export CLAUDE_CODE_USE_BEDROCK=1`);
+ensureInZprofile(`export GIT_CONFIG_NOSYSTEM=1`);
+ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInZprofile(`export WRANGLER_HOME="$HOME/.wrangler"`);
+ensureInZprofile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 
 step("Done!");
 if (writeZprofile()) console.log("    ~/.zprofile was updated. Restart terminal or run: source ~/.zprofile");
