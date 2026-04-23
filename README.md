@@ -25,9 +25,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Go | language | `brew install go` |
 | jq | CLI | `brew install jq` |
 | Claude Desktop | app | `brew install --cask claude` |
-| Kiro | app | dmg from kiro.dev |
+| Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
 | Ollama | app | `brew install --cask ollama` |
-| Vowen | app | dmg from vowen.ai |
+| Vowen | app | dmg from [vowen.ai](https://vowen.ai) |
 | Zoom | app | `brew install --cask zoom` |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
