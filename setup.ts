@@ -8,6 +8,8 @@ const out = (cmd: string) => execSync(cmd).toString().trim();
 
 const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
+const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
+const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
 
 const zprofile = `${homedir()}/.zprofile`;
 const existingZprofile = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
@@ -183,6 +185,44 @@ if (!wranglerVersion) {
   run("npm install -g wrangler");
 } else {
   ok("wrangler", wranglerVersion);
+}
+
+// --- git config ---
+
+step("git config");
+const gitconfig = `${homedir()}/.gitconfig`;
+const existingGitconfig = existsSync(gitconfig) ? readFileSync(gitconfig, "utf8") : "";
+
+const includes: Array<{ dir: string; path: string }> = [
+  { dir: "~/@aws/", path: `${homedir()}/.gitconfig-aws` },
+  { dir: "~/@piotrek/", path: `${homedir()}/.gitconfig-piotrek` },
+];
+
+let gitconfigContents = existingGitconfig;
+for (const { dir, path } of includes) {
+  const marker = `[includeIf "gitdir:${dir}"]`;
+  const label = `${dir} → ${path}`;
+  const blockRegex = new RegExp(`\\[includeIf "gitdir:${dir.replace(/[.*+?^${}()|[\\\]\\\\]/g, "\\\\$&")}"\\]\\n\\tpath = (.*)`);
+  const match = gitconfigContents.match(blockRegex);
+  if (!match) {
+    console.log(green(`    + ${label}`));
+    gitconfigContents = `${marker}\n\tpath = ${path}\n${gitconfigContents}`;
+  } else if (match[1] !== path) {
+    console.log(green(`    ✓ ${label} (was ${match[1]})`));
+    gitconfigContents = gitconfigContents.replace(blockRegex, `${marker}\n\tpath = ${path}`);
+  } else {
+    console.log(`    ✓ ${label}`);
+  }
+}
+if (gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
+
+for (const { path } of includes) {
+  if (!existsSync(path)) writeFileSync(path, "");
+  if (readFileSync(path, "utf8").includes("[user]")) {
+    console.log(`    ✓ ${path}`);
+  } else {
+    console.log(yellow(`    ! ${path} — add [user] name and email`));
+  }
 }
 
 // --- .zprofile ---

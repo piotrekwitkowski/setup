@@ -1,6 +1,12 @@
 # setup
 
-Mac setup script. Run on a new machine:
+Mac setup script. From a local clone:
+
+```sh
+./bootstrap.sh
+```
+
+Or on a new machine:
 
 ```sh
 bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/bootstrap.sh)
@@ -24,6 +30,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Claude Code | CLI | npm -g |
 | OpenCode | CLI | npm -g |
 | Wrangler | CLI | npm -g |
+
+## Git configuration
+
+Ensures `~/.gitconfig` contains `includeIf` directives routing repos under `~/@aws/` and `~/@piotrek/` to per-context config files (`~/.gitconfig-aws`, `~/.gitconfig-piotrek`). Creates the files empty if missing and warns when they lack a `[user]` section — fill them in with your name and email.
 
 ## Shell configuration
 
