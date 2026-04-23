@@ -77,7 +77,7 @@ if (!exists("git-secrets")) {
   console.log("Installing...");
   run("brew install git-secrets");
 } else {
-  ok("git-secrets", out("git-secrets --version"));
+  ok("git-secrets", out("brew list --versions git-secrets").split(" ")[1]);
 }
 
 step("Go");
@@ -199,6 +199,19 @@ if (!wranglerVersion) {
   run("npm install -g wrangler");
 } else {
   ok("wrangler", wranglerVersion);
+}
+
+// --- MCP servers ---
+
+step("GitHub MCP server");
+const claudeJson = `${homedir()}/.claude.json`;
+const claudeConfig = existsSync(claudeJson) ? JSON.parse(readFileSync(claudeJson, "utf8")) : {};
+const mcpServers = claudeConfig.mcpServers ?? {};
+if (mcpServers.github?.url === "https://api.githubcopilot.com/mcp/") {
+  console.log("    ✓ github → https://api.githubcopilot.com/mcp/");
+} else {
+  run("claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --scope user");
+  console.log(green("    + github → https://api.githubcopilot.com/mcp/"));
 }
 
 // --- git config ---
