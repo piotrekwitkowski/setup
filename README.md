@@ -25,10 +25,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Go | language | `brew install go` |
 | jq | CLI | `brew install jq` |
 | Claude Desktop | app | `brew install --cask claude` |
-| Kiro | app | dmg |
+| Kiro | app | dmg from kiro.dev |
 | Ollama | app | `brew install --cask ollama` |
-| Vowen | app | dmg |
-| Zoom | app | pkg |
+| Vowen | app | dmg from vowen.ai |
+| Zoom | app | `brew install --cask zoom` |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
 | OpenCode | CLI | `npm install -g opencode-ai` |
