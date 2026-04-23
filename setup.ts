@@ -128,6 +128,14 @@ if (!existsSync("/Applications/Kiro.app")) {
   ok("Kiro", out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString"));
 }
 
+step("Ollama");
+if (!existsSync("/Applications/Ollama.app")) {
+  console.log("Installing...");
+  run("brew install --cask ollama");
+} else {
+  ok("Ollama", out("defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString"));
+}
+
 step("Vowen");
 if (!existsSync("/Applications/Vowen.app")) {
   console.log("Installing...");

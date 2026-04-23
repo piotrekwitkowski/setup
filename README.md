@@ -25,6 +25,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | jq | CLI | brew |
 | Claude Desktop | app | brew cask |
 | Kiro | app | dmg |
+| Ollama | app | brew cask |
 | Vowen | app | dmg |
 | Zoom | app | pkg |
 | AWS CDK | CLI | npm -g |
