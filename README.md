@@ -16,22 +16,23 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 
 | Tool | Type | Method |
 |---|---|---|
-| Node.js LTS | runtime | fnm |
-| Homebrew | package manager | curl |
-| AWS CLI | CLI | brew |
-| gh | CLI | brew |
-| git-secrets | CLI | brew |
-| Go | language | brew |
-| jq | CLI | brew |
-| Claude Desktop | app | brew cask |
+| Homebrew | package manager | `curl \| bash` |
+| fnm | Node version manager | `brew install fnm` |
+| Node.js LTS | runtime | `fnm install --lts` |
+| AWS CLI | CLI | `brew install awscli` |
+| gh | CLI | `brew install gh` |
+| git-secrets | CLI | `brew install git-secrets` |
+| Go | language | `brew install go` |
+| jq | CLI | `brew install jq` |
+| Claude Desktop | app | `brew install --cask claude` |
 | Kiro | app | dmg |
-| Ollama | app | brew cask |
+| Ollama | app | `brew install --cask ollama` |
 | Vowen | app | dmg |
 | Zoom | app | pkg |
-| AWS CDK | CLI | npm -g |
-| Claude Code | CLI | npm -g |
-| OpenCode | CLI | npm -g |
-| Wrangler | CLI | npm -g |
+| AWS CDK | CLI | `npm install -g aws-cdk` |
+| Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
+| OpenCode | CLI | `npm install -g opencode-ai` |
+| Wrangler | CLI | `npm install -g wrangler` |
 
 ## Git configuration
 
