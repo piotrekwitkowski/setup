@@ -72,6 +72,14 @@ if (!exists("gh")) {
   ok("gh", out("gh --version").split(" ")[2]);
 }
 
+step("git-secrets");
+if (!exists("git-secrets")) {
+  console.log("Installing...");
+  run("brew install git-secrets");
+} else {
+  ok("git-secrets", out("git-secrets --version"));
+}
+
 step("Go");
 if (!exists("go")) {
   console.log("Installing...");
