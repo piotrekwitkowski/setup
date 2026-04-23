@@ -193,13 +193,23 @@ step("git config");
 const expand = (p: string) => p.replace(/^~/, homedir());
 const gitconfig = expand("~/.gitconfig");
 const existingGitconfig = existsSync(gitconfig) ? readFileSync(gitconfig, "utf8") : "";
+let remainder = existingGitconfig;
 
+// credential helper — use macOS keychain
+const credentialLabel = "credential.helper = osxkeychain";
+if (/\[credential\][^[]*helper\s*=\s*osxkeychain/.test(remainder)) {
+  console.log(`    ✓ ${credentialLabel}`);
+} else {
+  console.log(green(`    + ${credentialLabel}`));
+  remainder += `[credential]\n\thelper = osxkeychain\n`;
+}
+
+// includeIf entries — per-directory identity, in sorted order
 const includes: Array<{ dir: string; path: string }> = [
   { dir: "~/@aws/", path: "~/.gitconfig-aws" },
   { dir: "~/@piotrek/", path: "~/.gitconfig-piotrek" },
 ].sort((a, b) => a.dir.localeCompare(b.dir));
 
-let remainder = existingGitconfig;
 for (const { dir, path } of includes) {
   const label = `${dir} → ${path}`;
   const blockRegex = new RegExp(`\\[includeIf "gitdir:${dir.replace(/[.*+?^${}()|[\\\]\\\\]/g, "\\\\$&")}"\\]\\n\\tpath = (.*)\\n`);
@@ -214,9 +224,12 @@ for (const { dir, path } of includes) {
   if (match) remainder = remainder.replace(blockRegex, "");
 }
 const sortedBlocks = includes.map(({ dir, path }) => `[includeIf "gitdir:${dir}"]\n\tpath = ${path}\n`).join("");
+
+// write back
 const gitconfigContents = sortedBlocks + remainder;
 if (gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
 
+// per-directory identity files
 for (const { path } of includes) {
   const fsPath = expand(path);
   if (!existsSync(fsPath)) writeFileSync(fsPath, "");
