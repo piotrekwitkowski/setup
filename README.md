@@ -33,6 +33,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
 | OpenCode | CLI | `npm install -g opencode-ai` |
 | Wrangler | CLI | `npm install -g wrangler` |
+| GitHub MCP server | MCP | `claude mcp add --scope user` (remote server) |
 
 ## Git configuration
 
