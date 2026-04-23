@@ -23,7 +23,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | gh | CLI | `brew install gh` |
 | git-secrets | CLI | `brew install git-secrets` |
 | Go | language | `brew install go` |
-| jq | CLI | `brew install jq` |
 | Claude Desktop | app | `brew install --cask claude` |
 | Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
 | Ollama | app | `brew install --cask ollama` |

@@ -88,14 +88,6 @@ if (!exists("go")) {
   ok("go", out("go version").split(" ")[2].replace("go", ""));
 }
 
-step("jq");
-if (!exists("jq")) {
-  console.log("Installing...");
-  run("brew install jq");
-} else {
-  ok("jq", out("jq --version").replace("jq-", ""));
-}
-
 // --- Apps ---
 
 step("Claude Desktop");
