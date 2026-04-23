@@ -206,6 +206,31 @@ if (mcpServers.github?.url === "https://api.githubcopilot.com/mcp/") {
   console.log(green("    + github → https://api.githubcopilot.com/mcp/"));
 }
 
+// --- Claude Code settings ---
+
+step("Claude Code settings");
+const claudeSettings = `${homedir()}/.claude/settings.json`;
+const existingClaudeSettings = existsSync(claudeSettings) ? JSON.parse(readFileSync(claudeSettings, "utf8")) : {};
+const desiredClaudeSettings = {
+  ...existingClaudeSettings,
+  permissions: {
+    ...existingClaudeSettings.permissions,
+    ask: [
+      "Bash(git push *)",
+      "Bash(git push)",
+    ],
+    allow: [
+      "Bash(git *)",
+    ],
+  },
+};
+if (JSON.stringify(existingClaudeSettings) === JSON.stringify(desiredClaudeSettings)) {
+  console.log("    ✓ permissions");
+} else {
+  writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
+  console.log(green("    + permissions"));
+}
+
 // --- git config ---
 
 step("git config");
