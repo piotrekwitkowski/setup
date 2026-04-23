@@ -215,12 +215,22 @@ const desiredClaudeSettings = {
   ...existingClaudeSettings,
   permissions: {
     ...existingClaudeSettings.permissions,
-    ask: [
-      "Bash(git push *)",
-      "Bash(git push)",
-    ],
     allow: [
       "Bash(git *)",
+    ],
+  },
+  hooks: {
+    ...existingClaudeSettings.hooks,
+    PreToolUse: [
+      {
+        matcher: "Bash",
+        hooks: [
+          {
+            type: "command",
+            command: `jq -r '.tool_input.command' | grep -q 'git.*push' && echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"contains git push"}}' || true`,
+          },
+        ],
+      },
     ],
   },
 };
