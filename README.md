@@ -34,6 +34,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Wrangler | CLI | `npm install -g wrangler` |
 | GitHub MCP server | MCP | `claude mcp add --scope user` (remote server) |
 
+## Claude Code configuration
+
+Configures `~/.claude/settings.json` with auto-approved permissions for readonly CLI commands and hooks that guard destructive operations behind confirmation prompts.
+
 ## Git configuration
 
 Ensures `~/.gitconfig` contains `includeIf` directives routing repos under `~/@aws/` and `~/@piotrek/` to per-context config files (`~/.gitconfig-aws`, `~/.gitconfig-piotrek`). Creates the files empty if missing and warns when they lack a `[user]` section — fill them in with your name and email.
