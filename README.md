@@ -30,6 +30,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Zoom | app | `brew install --cask zoom` |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
+| npm-check-updates | CLI | `npm install -g npm-check-updates` |
 | OpenCode | CLI | `npm install -g opencode-ai` |
 | Wrangler | CLI | `npm install -g wrangler` |
 | GitHub MCP server | MCP | `claude mcp add --scope user` (remote server) |

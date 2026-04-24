@@ -175,6 +175,15 @@ if (!claudeVersion) {
   ok("claude", claudeVersion);
 }
 
+step("npm-check-updates");
+const ncuVersion = spawnSync("ncu --version", { shell: true }).stdout?.toString().trim();
+if (!ncuVersion) {
+  console.log("Installing...");
+  run("npm install -g npm-check-updates");
+} else {
+  ok("ncu", ncuVersion);
+}
+
 step("OpenCode");
 const opencodeVersion = spawnSync("opencode --version", { shell: true }).stdout?.toString().trim();
 if (!opencodeVersion) {
