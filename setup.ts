@@ -217,6 +217,21 @@ const desiredClaudeSettings = {
     ...existingClaudeSettings.permissions,
     allow: [
       "Bash(git *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr status *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh issue status *)",
+      "Bash(gh repo view *)",
+      "Bash(gh release view *)",
+      "Bash(gh release list *)",
+      "Bash(gh run view *)",
+      "Bash(gh run list *)",
+      "Bash(gh search *)",
+      "Bash(gh api *)",
     ],
   },
   hooks: {
@@ -234,11 +249,21 @@ const desiredClaudeSettings = {
     ],
   },
 };
-if (JSON.stringify(existingClaudeSettings) === JSON.stringify(desiredClaudeSettings)) {
-  console.log("    ✓ permissions");
-} else {
-  writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
-  console.log(green("    + permissions"));
+const changed = JSON.stringify(existingClaudeSettings) !== JSON.stringify(desiredClaudeSettings);
+if (changed) writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
+for (const key of ["allow", "deny", "ask"] as const) {
+  const existing = new Set(existingClaudeSettings.permissions?.[key] ?? []);
+  for (const rule of desiredClaudeSettings.permissions[key] ?? [])
+    console.log(existing.has(rule) ? `    ✓ ${key} ${rule}` : green(`    + ${key} ${rule}`));
+}
+const existingHooks = existingClaudeSettings.hooks ?? {};
+for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [string, any[]][]) {
+  for (const entry of matchers) {
+    const label = entry.matcher ? `${event}(${entry.matcher})` : event;
+    const existingMatchers = existingHooks[event] ?? [];
+    const existed = existingMatchers.some((e: any) => JSON.stringify(e) === JSON.stringify(entry));
+    console.log(existed ? `    ✓ hook ${label}` : green(`    + hook ${label}`));
+  }
 }
 
 // --- git config ---
