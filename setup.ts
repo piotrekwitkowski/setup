@@ -232,6 +232,12 @@ const desiredClaudeSettings = {
       "Bash(gh run view *)",
       "Bash(gh search *)",
       "Bash(git *)",
+      "Bash(npm audit)",
+      "Bash(npm explain *)",
+      "Bash(npm ls *)",
+      "Bash(npm outdated)",
+      "Bash(npm test)",
+      "Bash(npm view *)",
     ],
   },
   hooks: {
