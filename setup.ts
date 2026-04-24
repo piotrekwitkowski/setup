@@ -43,16 +43,16 @@ const writeZprofile = () => {
   return changed;
 };
 
-// --- Homebrew ---
+// --- Prerequisites (installed by bootstrap.sh) ---
 
 step("Homebrew");
-if (!exists("brew")) {
-  console.log("Installing...");
-  run('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"');
-  run('eval "$(/opt/homebrew/bin/brew shellenv)"');
-} else {
-  ok("brew", out("brew --version").split(" ")[1]);
-}
+ok("brew", out("brew --version").split(" ")[1]);
+
+step("fnm");
+ok("fnm", out("fnm --version"));
+
+step("Node");
+ok("node", `${out("node --version").replace("v", "")}, npm ${out("npm --version")}`);
 
 // --- Brew tools ---
 

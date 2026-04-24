@@ -25,10 +25,6 @@ if ! fnm ls | grep -q "lts-latest"; then
 fi
 fnm use lts-latest >/dev/null 2>&1 || true
 
-echo ""
-echo ">>> Node"
-echo "    node $(node --version | tr -d 'v'), npm $(npm --version)"
-
 # Hand off to TypeScript setup
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETUP_TS="$SCRIPT_DIR/setup.ts"
