@@ -225,6 +225,7 @@ const desiredClaudeSettings = {
   permissions: {
     ...existingClaudeSettings.permissions,
     allow: [
+      "Bash(find *)",
       "Bash(gh api *)",
       "Bash(gh issue list *)",
       "Bash(gh issue status *)",
@@ -241,6 +242,7 @@ const desiredClaudeSettings = {
       "Bash(gh run view *)",
       "Bash(gh search *)",
       "Bash(git *)",
+      "Bash(ls *)",
       "Bash(npm audit)",
       "Bash(npm explain *)",
       "Bash(npm ls *)",
