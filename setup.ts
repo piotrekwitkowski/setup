@@ -238,6 +238,7 @@ const desiredClaudeSettings = {
       "Bash(curl -s http://localhost*)",
       "Bash(diff *)",
       "Bash(find *)",
+      "Bash(gh -R *)",
       "Bash(gh api *)",
       "Bash(gh issue list *)",
       "Bash(gh issue status *)",
