@@ -175,6 +175,15 @@ if (!claudeVersion) {
   ok("claude", claudeVersion);
 }
 
+step("Lighthouse");
+const lighthouseVersion = spawnSync("lighthouse --version", { shell: true }).stdout?.toString().trim();
+if (!lighthouseVersion) {
+  console.log("Installing...");
+  run("npm install -g lighthouse");
+} else {
+  ok("lighthouse", lighthouseVersion);
+}
+
 step("npm-check-updates");
 const ncuVersion = spawnSync("ncu --version", { shell: true }).stdout?.toString().trim();
 if (!ncuVersion) {
@@ -246,6 +255,7 @@ const desiredClaudeSettings = {
       "Bash(git *)",
       "Bash(grep *)",
       "Bash(head *)",
+      "Bash(lighthouse *)",
       "Bash(ls *)",
       "Bash(npm audit)",
       "Bash(npm explain *)",
