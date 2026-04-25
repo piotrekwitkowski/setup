@@ -235,6 +235,7 @@ const desiredClaudeSettings = {
     ...existingClaudeSettings.permissions,
     allow: [
       "Bash(cat *)",
+      "Bash(curl -s http://localhost*)",
       "Bash(diff *)",
       "Bash(find *)",
       "Bash(gh api *)",
@@ -255,6 +256,7 @@ const desiredClaudeSettings = {
       "Bash(git *)",
       "Bash(grep *)",
       "Bash(head *)",
+      "Bash(jq *)",
       "Bash(lighthouse *)",
       "Bash(ls *)",
       "Bash(npm audit)",
@@ -264,6 +266,7 @@ const desiredClaudeSettings = {
       "Bash(npm test)",
       "Bash(npm view *)",
       "Bash(tail *)",
+      "Bash(tree *)",
       "Bash(wc *)",
       "Bash(which *)",
     ],
