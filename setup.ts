@@ -88,6 +88,14 @@ if (!exists("go")) {
   ok("go", out("go version").split(" ")[2].replace("go", ""));
 }
 
+step("Kiro CLI");
+if (!existsSync("/Applications/Kiro CLI.app")) {
+  console.log("Installing...");
+  run("brew install --cask kiro-cli");
+} else {
+  ok("kiro-cli", out("defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString"));
+}
+
 // --- Apps ---
 
 step("Claude Desktop");
