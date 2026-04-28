@@ -30,11 +30,11 @@ if ! fnm ls | grep -q "lts-latest"; then
 fi
 fnm use lts-latest >/dev/null 2>&1 || true
 
-# Hand off to TypeScript setup
+# Hand off to TypeScript
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETUP_TS="$SCRIPT_DIR/setup.ts"
 if [[ ! -f "$SETUP_TS" ]]; then
   SETUP_TS="/tmp/setup.ts"
   curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/setup.ts -o "$SETUP_TS"
 fi
-npx --yes tsx "$SETUP_TS"
+npx --yes tsx "$SETUP_TS" "$@"

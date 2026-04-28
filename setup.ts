@@ -1,7 +1,9 @@
 import { execSync, spawnSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { homedir, platform } from "os";
+import { installDmg } from "./lib/dmg";
 
+const fix = process.argv.includes("--fix") || process.argv.includes("-f");
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
 const exists = (cmd: string) => spawnSync(`command -v ${cmd}`, { shell: true }).status === 0;
 const out = (cmd: string) => execSync(cmd).toString().trim();
@@ -10,47 +12,14 @@ const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
+const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
+const missing = (name: string) => console.log(`    ${red(`${name} not installed`)}`);
+
+let issues = 0;
 
 const os = platform() === "darwin"
   ? { mac: true, brewPrefix: "/opt/homebrew", shell: "zsh", profile: `${homedir()}/.zprofile` }
   : { mac: false, brewPrefix: "/home/linuxbrew/.linuxbrew", shell: "bash", profile: `${homedir()}/.bash_profile` };
-
-// --- Shell config ---
-const existingProfile = existsSync(os.profile) ? readFileSync(os.profile, "utf8") : "";
-const evals: string[] = [];
-const envs: string[] = [];
-const aliases: string[] = [];
-const ensureInProfile = (line: string) => {
-  const already = existingProfile.includes(line);
-  console.log(`    ${already ? "✓" : "+"} ${line}`);
-  if (line.startsWith("eval ")) {
-    if (!evals.includes(line)) evals.push(line);
-  } else if (line.startsWith("export ")) {
-    if (!envs.includes(line)) envs.push(line);
-  } else if (line.startsWith("alias ")) {
-    if (!aliases.includes(line)) aliases.push(line);
-  }
-};
-
-const writeProfile = () => {
-  const newContents = [
-    ...evals,
-    "",
-    ...envs.sort(),
-    "",
-    ...aliases
-  ].join("\n") + "\n";
-
-  if (existingProfile === newContents) return false;
-
-  const oldLines = new Set(existingProfile.split("\n").filter(Boolean));
-  const newLines = new Set(newContents.split("\n").filter(Boolean));
-  for (const line of newLines) if (!oldLines.has(line)) console.log(green(`    + ${line}`));
-  for (const line of oldLines) if (!newLines.has(line)) console.log(`    - ${line}`);
-
-  writeFileSync(os.profile, newContents);
-  return true;
-};
 
 // --- Prerequisites (installed by bootstrap.sh) ---
 
@@ -60,174 +29,164 @@ ok("brew", out("brew --version").split(" ")[1]);
 step("fnm");
 ok("fnm", out("fnm --version"));
 
-step("Node");
-ok("node", `${out("node --version").replace("v", "")}, npm ${out("npm --version")}`);
+step("Node.js LTS");
+const currentNode = out("node --version").replace("v", "");
+const latestLts = out("fnm ls-remote --lts | tail -1").replace("v", "").split(" ")[0];
+if (currentNode === latestLts) {
+  ok("node", `${currentNode} (latest LTS), npm ${out("npm --version")}`);
+} else {
+  console.log(`    ${yellow(`node ${currentNode} → ${latestLts} available`)}`);
+  issues++;
+  if (fix) {
+    run("fnm install --lts");
+    run("fnm default lts-latest");
+  }
+}
 
 // --- Brew CLIs ---
 
-step("AWS CLI");
-if (!exists("aws")) {
-  console.log("Installing...");
-  run("brew install awscli");
-} else {
-  ok("aws", out("aws --version").split(" ")[0].split("/")[1]);
-}
+const brewClis: Array<{ name: string; formula: string; version: () => string }> = [
+  { name: "aws", formula: "awscli", version: () => out("aws --version").split(" ")[0].split("/")[1] },
+  { name: "gh", formula: "gh", version: () => out("gh --version").split(" ")[2] },
+  { name: "git-secrets", formula: "git-secrets", version: () => out("brew list --versions git-secrets").split(" ")[1] },
+  { name: "go", formula: "go", version: () => out("go version").split(" ")[2].replace("go", "") },
+];
 
-step("gh");
-if (!exists("gh")) {
-  console.log("Installing...");
-  run("brew install gh");
-} else {
-  ok("gh", out("gh --version").split(" ")[2]);
-}
-
-step("git-secrets");
-if (!exists("git-secrets")) {
-  console.log("Installing...");
-  run("brew install git-secrets");
-} else {
-  ok("git-secrets", out("brew list --versions git-secrets").split(" ")[1]);
-}
-
-step("Go");
-if (!exists("go")) {
-  console.log("Installing...");
-  run("brew install go");
-} else {
-  ok("go", out("go version").split(" ")[2].replace("go", ""));
+for (const cli of brewClis) {
+  step(cli.name);
+  if (!exists(cli.name)) {
+    missing(cli.name);
+    issues++;
+    if (fix) run(`brew install ${cli.formula}`);
+  } else {
+    ok(cli.name, cli.version());
+  }
 }
 
 // --- Mac-only apps ---
 
 if (os.mac) {
-  step("Kiro CLI");
-  if (!existsSync("/Applications/Kiro CLI.app")) {
-    console.log("Installing...");
-    run("brew install --cask kiro-cli");
-  } else {
-    ok("kiro-cli", out("defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString"));
+  const caskApps: Array<{ name: string; appPath: string; cask: string; version: () => string }> = [
+    { name: "Claude Desktop", appPath: "/Applications/Claude.app", cask: "claude", version: () => out("defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString") },
+    { name: "Kiro CLI", appPath: "/Applications/Kiro CLI.app", cask: "kiro-cli", version: () => out("defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString") },
+    { name: "Ollama", appPath: "/Applications/Ollama.app", cask: "ollama", version: () => out("defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString") },
+    { name: "Zoom", appPath: "/Applications/zoom.us.app", cask: "zoom", version: () => out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion") },
+  ];
+
+  for (const app of caskApps) {
+    step(app.name);
+    if (!existsSync(app.appPath)) {
+      missing(app.name);
+      issues++;
+      if (fix) run(`brew install --cask ${app.cask}`);
+    } else {
+      ok(app.name, app.version());
+    }
   }
 
-  step("Claude Desktop");
-  if (!existsSync("/Applications/Claude.app")) {
-    console.log("Installing...");
-    run("brew install --cask claude");
+  step("Kiro IDE");
+  const kiroInstalled = existsSync("/Applications/Kiro.app");
+  const kiroPage = out("curl -fsSL https://kiro.dev/downloads/");
+  const kiroMatch = kiroPage.match(/Latest IDE([\d.]+)/);
+  if (!kiroInstalled) {
+    missing("Kiro IDE");
+    issues++;
+    if (fix && kiroMatch) {
+      const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
+      const version = kiroMatch[1];
+      const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
+      const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
+      installDmg("Kiro", url, dmg);
+      console.log("    Sign in with AWS in Kiro to configure SSO before continuing.");
+    }
   } else {
-    ok("Claude Desktop", out("defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString"));
-  }
-
-  step("Kiro");
-  if (!existsSync("/Applications/Kiro.app")) {
-    console.log("Installing...");
-    const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
-    const page = out("curl -fsSL https://kiro.dev/downloads/");
-    const match = page.match(/Latest IDE([\d.]+)/);
-    if (!match) throw new Error("Could not determine latest Kiro version");
-    const version = match[1];
-    const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
-    const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
-    run(`curl -fsSL "${url}" -o /tmp/${dmg}`);
-    run(`hdiutil attach /tmp/${dmg} -quiet`);
-    const volume = out("ls /Volumes | grep -i kiro");
-    run(`cp -R "/Volumes/${volume}/Kiro.app" /Applications/`);
-    run(`hdiutil detach "/Volumes/${volume}" -quiet`);
-    run(`rm /tmp/${dmg}`);
-    ok("Kiro", version);
-    console.log("    Sign in with AWS in Kiro to configure SSO before continuing.");
-  } else {
-    ok("Kiro", out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString"));
-  }
-
-  step("Ollama");
-  if (!existsSync("/Applications/Ollama.app")) {
-    console.log("Installing...");
-    run("brew install --cask ollama");
-  } else {
-    ok("Ollama", out("defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString"));
+    const installed = out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString");
+    if (kiroMatch && kiroMatch[1] !== installed) {
+      console.log(`    ${yellow(`Kiro IDE ${installed} → ${kiroMatch[1]} available`)}`);
+      issues++;
+      if (fix) {
+        const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
+        const version = kiroMatch[1];
+        const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
+        const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
+        installDmg("Kiro", url, dmg);
+      }
+    } else {
+      ok("Kiro IDE", installed);
+    }
   }
 
   step("Vowen");
-  if (!existsSync("/Applications/Vowen.app")) {
-    console.log("Installing...");
-    const page = out("curl -fsSL https://vowen.ai/");
-    const match = page.match(/Vowen-([\d.]+)-arm64\.dmg/);
-    if (!match) throw new Error("Could not determine latest Vowen version");
-    const version = match[1];
-    const dmg = `Vowen-${version}-arm64.dmg`;
-    run(`curl -fsSL "https://assets.vowen.ai/${dmg}" -o /tmp/${dmg}`);
-    run(`hdiutil attach /tmp/${dmg} -quiet`);
-    const volume = out("ls /Volumes | grep -i vowen");
-    run(`cp -R "/Volumes/${volume}/Vowen.app" /Applications/`);
-    run(`hdiutil detach "/Volumes/${volume}" -quiet`);
-    run(`rm /tmp/${dmg}`);
-    ok("Vowen", version);
+  const vowenInstalled = existsSync("/Applications/Vowen.app");
+  const vowenPage = out("curl -fsSL https://vowen.ai/");
+  const vowenMatch = vowenPage.match(/Vowen-([\d.]+)-arm64\.dmg/);
+  if (!vowenInstalled) {
+    missing("Vowen");
+    issues++;
+    if (fix && vowenMatch) {
+      const version = vowenMatch[1];
+      const dmg = `Vowen-${version}-arm64.dmg`;
+      installDmg("Vowen", `https://assets.vowen.ai/${dmg}`, dmg);
+    }
   } else {
-    ok("Vowen", out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString"));
-  }
-
-  step("Zoom");
-  if (!existsSync("/Applications/zoom.us.app")) {
-    console.log("Installing...");
-    run("brew install --cask zoom");
-  } else {
-    ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
+    const installed = out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString");
+    if (vowenMatch && vowenMatch[1] !== installed) {
+      console.log(`    ${yellow(`Vowen ${installed} → ${vowenMatch[1]} available`)}`);
+      issues++;
+      if (fix) {
+        const version = vowenMatch[1];
+        const dmg = `Vowen-${version}-arm64.dmg`;
+        installDmg("Vowen", `https://assets.vowen.ai/${dmg}`, dmg);
+      }
+    } else {
+      ok("Vowen", installed);
+    }
   }
 }
 
 // --- npm globals ---
 
-step("AWS CDK");
-const cdkVersion = spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
-if (!cdkVersion) {
-  console.log("Installing...");
-  run("npm install -g aws-cdk");
-} else {
-  ok("cdk", cdkVersion);
+const npmGlobals: Array<{ name: string; pkg: string; cmd: string; version: () => string }> = [
+  { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", version: () => spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0] },
+  { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", version: () => spawnSync("claude --version", { shell: true }).stdout?.toString().trim().split(" ")[0] },
+  { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", version: () => spawnSync("lighthouse --version", { shell: true }).stdout?.toString().trim() },
+  { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", version: () => spawnSync("ncu --version", { shell: true }).stdout?.toString().trim() },
+  { name: "OpenCode", pkg: "opencode-ai", cmd: "opencode", version: () => spawnSync("opencode --version", { shell: true }).stdout?.toString().trim() },
+  { name: "Wrangler", pkg: "wrangler", cmd: "wrangler", version: () => spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim() },
+];
+
+for (const g of npmGlobals) {
+  step(g.name);
+  const v = g.version();
+  if (!v) {
+    missing(g.name);
+    issues++;
+    if (fix) run(`npm install -g ${g.pkg}`);
+  } else {
+    ok(g.cmd, v);
+  }
 }
 
-step("Claude Code");
-const claudeVersion = spawnSync("claude --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
-if (!claudeVersion) {
-  console.log("Installing...");
-  run("npm install -g @anthropic-ai/claude-code");
+// --- Outdated ---
+
+step("Homebrew outdated");
+const brewOutdated = spawnSync("brew outdated --verbose", { shell: true }).stdout?.toString().trim();
+if (brewOutdated) {
+  for (const line of brewOutdated.split("\n")) console.log(`    ${yellow(line)}`);
+  issues += brewOutdated.split("\n").length;
+  if (fix) run("brew upgrade");
 } else {
-  ok("claude", claudeVersion);
+  console.log("    All formulae and casks up to date");
 }
 
-step("Lighthouse");
-const lighthouseVersion = spawnSync("lighthouse --version", { shell: true }).stdout?.toString().trim();
-if (!lighthouseVersion) {
-  console.log("Installing...");
-  run("npm install -g lighthouse");
+step("npm globals outdated");
+const npmOutdated = spawnSync("npm outdated -g --long", { shell: true }).stdout?.toString().trim();
+if (npmOutdated) {
+  for (const line of npmOutdated.split("\n")) console.log(`    ${yellow(line)}`);
+  issues += npmOutdated.split("\n").length - 1;
+  if (fix) run("npm update -g");
 } else {
-  ok("lighthouse", lighthouseVersion);
-}
-
-step("npm-check-updates");
-const ncuVersion = spawnSync("ncu --version", { shell: true }).stdout?.toString().trim();
-if (!ncuVersion) {
-  console.log("Installing...");
-  run("npm install -g npm-check-updates");
-} else {
-  ok("ncu", ncuVersion);
-}
-
-step("OpenCode");
-const opencodeVersion = spawnSync("opencode --version", { shell: true }).stdout?.toString().trim();
-if (!opencodeVersion) {
-  console.log("Installing...");
-  run("npm install -g opencode-ai");
-} else {
-  ok("opencode", opencodeVersion);
-}
-
-step("Wrangler");
-const wranglerVersion = spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim();
-if (!wranglerVersion) {
-  console.log("Installing...");
-  run("npm install -g wrangler");
-} else {
-  ok("wrangler", wranglerVersion);
+  console.log("    All global packages up to date");
 }
 
 // --- MCP servers ---
@@ -239,8 +198,12 @@ const mcpServers = claudeConfig.mcpServers ?? {};
 if (mcpServers.github?.url === "https://api.githubcopilot.com/mcp/") {
   console.log("    ✓ github → https://api.githubcopilot.com/mcp/");
 } else {
-  run("claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --scope user");
-  console.log(green("    + github → https://api.githubcopilot.com/mcp/"));
+  console.log(`    ${red("github MCP server not configured")}`);
+  issues++;
+  if (fix) {
+    run("claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --scope user");
+    console.log(green("    + github → https://api.githubcopilot.com/mcp/"));
+  }
 }
 
 // --- Claude Code settings ---
@@ -307,11 +270,17 @@ const desiredClaudeSettings = {
   },
 };
 const settingsChanged = JSON.stringify(existingClaudeSettings) !== JSON.stringify(desiredClaudeSettings);
-if (settingsChanged) writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
+if (fix && settingsChanged) writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
 for (const key of ["allow", "deny", "ask"] as const) {
   const existing = new Set(existingClaudeSettings.permissions?.[key] ?? []);
-  for (const rule of desiredClaudeSettings.permissions[key] ?? [])
-    console.log(existing.has(rule) ? `    ✓ ${key} ${rule}` : green(`    + ${key} ${rule}`));
+  for (const rule of desiredClaudeSettings.permissions[key] ?? []) {
+    if (existing.has(rule)) {
+      console.log(`    ✓ ${key} ${rule}`);
+    } else {
+      console.log(fix ? green(`    + ${key} ${rule}`) : `    ${red(`missing ${key} ${rule}`)}`);
+      if (!fix) issues++;
+    }
+  }
 }
 const existingHooks = existingClaudeSettings.hooks ?? {};
 for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [string, any[]][]) {
@@ -319,7 +288,12 @@ for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [
     const label = entry.matcher ? `${event}(${entry.matcher})` : event;
     const existingMatchers = existingHooks[event] ?? [];
     const existed = existingMatchers.some((e: any) => JSON.stringify(e) === JSON.stringify(entry));
-    console.log(existed ? `    ✓ hook ${label}` : green(`    + hook ${label}`));
+    if (existed) {
+      console.log(`    ✓ hook ${label}`);
+    } else {
+      console.log(fix ? green(`    + hook ${label}`) : `    ${red(`missing hook ${label}`)}`);
+      if (!fix) issues++;
+    }
   }
 }
 
@@ -336,7 +310,8 @@ if (os.mac) {
   if (/\[credential\][^[]*helper\s*=\s*osxkeychain/.test(remainder)) {
     console.log(`    ✓ ${credentialLabel}`);
   } else {
-    console.log(green(`    + ${credentialLabel}`));
+    console.log(fix ? green(`    + ${credentialLabel}`) : `    ${red(`missing ${credentialLabel}`)}`);
+    if (!fix) issues++;
     remainder += `[credential]\n\thelper = osxkeychain\n`;
   }
 }
@@ -351,7 +326,8 @@ for (const { dir, path } of includes) {
   const blockRegex = new RegExp(`\\[includeIf "gitdir:${dir.replace(/[.*+?^${}()|[\\\]\\\\]/g, "\\\\$&")}"\\]\\n\\tpath = (.*)\\n`);
   const match = remainder.match(blockRegex);
   if (!match) {
-    console.log(green(`    + ${label}`));
+    console.log(fix ? green(`    + ${label}`) : `    ${red(`missing ${label}`)}`);
+    if (!fix) issues++;
   } else if (expand(match[1]) !== expand(path)) {
     console.log(green(`    ✓ ${label} (was ${match[1]})`));
   } else {
@@ -362,19 +338,56 @@ for (const { dir, path } of includes) {
 const sortedBlocks = includes.map(({ dir, path }) => `[includeIf "gitdir:${dir}"]\n\tpath = ${path}\n`).join("");
 
 const gitconfigContents = sortedBlocks + remainder;
-if (gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
+if (fix && gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
 
 for (const { path } of includes) {
   const fsPath = expand(path);
-  if (!existsSync(fsPath)) writeFileSync(fsPath, "");
-  if (readFileSync(fsPath, "utf8").includes("[user]")) {
+  if (fix && !existsSync(fsPath)) writeFileSync(fsPath, "");
+  if (existsSync(fsPath) && readFileSync(fsPath, "utf8").includes("[user]")) {
     console.log(`    ✓ ${path}`);
   } else {
-    console.log(yellow(`    ! ${path} — add [user] name and email`));
+    console.log(`    ${yellow(`! ${path} — add [user] name and email`)}`);
   }
 }
 
 // --- Shell profile ---
+
+const existingProfile = existsSync(os.profile) ? readFileSync(os.profile, "utf8") : "";
+const evals: string[] = [];
+const envs: string[] = [];
+const aliases: string[] = [];
+const ensureInProfile = (line: string) => {
+  const already = existingProfile.includes(line);
+  console.log(`    ${already ? "✓" : fix ? "+" : red("missing")} ${line}`);
+  if (!already && !fix) issues++;
+  if (line.startsWith("eval ")) {
+    if (!evals.includes(line)) evals.push(line);
+  } else if (line.startsWith("export ")) {
+    if (!envs.includes(line)) envs.push(line);
+  } else if (line.startsWith("alias ")) {
+    if (!aliases.includes(line)) aliases.push(line);
+  }
+};
+
+const writeProfile = () => {
+  const newContents = [
+    ...evals,
+    "",
+    ...envs.sort(),
+    "",
+    ...aliases
+  ].join("\n") + "\n";
+
+  if (existingProfile === newContents) return false;
+
+  const oldLines = new Set(existingProfile.split("\n").filter(Boolean));
+  const newLines = new Set(newContents.split("\n").filter(Boolean));
+  for (const line of newLines) if (!oldLines.has(line)) console.log(green(`    + ${line}`));
+  for (const line of oldLines) if (!newLines.has(line)) console.log(`    - ${line}`);
+
+  writeFileSync(os.profile, newContents);
+  return true;
+};
 
 step(os.shell === "zsh" ? ".zprofile" : ".bash_profile");
 
@@ -389,5 +402,13 @@ if (os.mac) {
   ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 }
 
-step("Done!");
-if (writeProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);
+if (fix && writeProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);
+
+// --- Summary ---
+
+console.log();
+if (issues > 0) {
+  console.log(fix ? green("Fixed!") : red(`${issues} issue${issues > 1 ? "s" : ""} found. Run with --fix / -f to resolve.`));
+} else {
+  console.log(green("Everything up to date"));
+}
