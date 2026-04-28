@@ -1,6 +1,6 @@
 import { execSync, spawnSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { homedir } from "os";
+import { homedir, platform } from "os";
 
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
 const exists = (cmd: string) => spawnSync(`command -v ${cmd}`, { shell: true }).status === 0;
@@ -11,13 +11,17 @@ const ok = (name: string, version: string) => console.log(`    ${name} ${version
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
 
-const zprofile = `${homedir()}/.zprofile`;
-const existingZprofile = existsSync(zprofile) ? readFileSync(zprofile, "utf8") : "";
+const os = platform() === "darwin"
+  ? { mac: true, brewPrefix: "/opt/homebrew", shell: "zsh", profile: `${homedir()}/.zprofile` }
+  : { mac: false, brewPrefix: "/home/linuxbrew/.linuxbrew", shell: "bash", profile: `${homedir()}/.bash_profile` };
+
+// --- Shell config ---
+const existingProfile = existsSync(os.profile) ? readFileSync(os.profile, "utf8") : "";
 const evals: string[] = [];
 const envs: string[] = [];
 const aliases: string[] = [];
-const ensureInZprofile = (line: string) => {
-  const already = existingZprofile.includes(line);
+const ensureInProfile = (line: string) => {
+  const already = existingProfile.includes(line);
   console.log(`    ${already ? "✓" : "+"} ${line}`);
   if (line.startsWith("eval ")) {
     if (!evals.includes(line)) evals.push(line);
@@ -28,8 +32,7 @@ const ensureInZprofile = (line: string) => {
   }
 };
 
-const writeZprofile = () => {
-  const existingContents = existingZprofile;
+const writeProfile = () => {
   const newContents = [
     ...evals,
     "",
@@ -38,9 +41,15 @@ const writeZprofile = () => {
     ...aliases
   ].join("\n") + "\n";
 
-  const changed = existingContents !== newContents;
-  if (changed) writeFileSync(zprofile, newContents);
-  return changed;
+  if (existingProfile === newContents) return false;
+
+  const oldLines = new Set(existingProfile.split("\n").filter(Boolean));
+  const newLines = new Set(newContents.split("\n").filter(Boolean));
+  for (const line of newLines) if (!oldLines.has(line)) console.log(green(`    + ${line}`));
+  for (const line of oldLines) if (!newLines.has(line)) console.log(`    - ${line}`);
+
+  writeFileSync(os.profile, newContents);
+  return true;
 };
 
 // --- Prerequisites (installed by bootstrap.sh) ---
@@ -54,7 +63,7 @@ ok("fnm", out("fnm --version"));
 step("Node");
 ok("node", `${out("node --version").replace("v", "")}, npm ${out("npm --version")}`);
 
-// --- Brew tools ---
+// --- Brew CLIs ---
 
 step("AWS CLI");
 if (!exists("aws")) {
@@ -88,82 +97,84 @@ if (!exists("go")) {
   ok("go", out("go version").split(" ")[2].replace("go", ""));
 }
 
-step("Kiro CLI");
-if (!existsSync("/Applications/Kiro CLI.app")) {
-  console.log("Installing...");
-  run("brew install --cask kiro-cli");
-} else {
-  ok("kiro-cli", out("defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString"));
+// --- Mac-only apps ---
+
+if (os.mac) {
+  step("Kiro CLI");
+  if (!existsSync("/Applications/Kiro CLI.app")) {
+    console.log("Installing...");
+    run("brew install --cask kiro-cli");
+  } else {
+    ok("kiro-cli", out("defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString"));
+  }
+
+  step("Claude Desktop");
+  if (!existsSync("/Applications/Claude.app")) {
+    console.log("Installing...");
+    run("brew install --cask claude");
+  } else {
+    ok("Claude Desktop", out("defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString"));
+  }
+
+  step("Kiro");
+  if (!existsSync("/Applications/Kiro.app")) {
+    console.log("Installing...");
+    const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
+    const page = out("curl -fsSL https://kiro.dev/downloads/");
+    const match = page.match(/Latest IDE([\d.]+)/);
+    if (!match) throw new Error("Could not determine latest Kiro version");
+    const version = match[1];
+    const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
+    const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
+    run(`curl -fsSL "${url}" -o /tmp/${dmg}`);
+    run(`hdiutil attach /tmp/${dmg} -quiet`);
+    const volume = out("ls /Volumes | grep -i kiro");
+    run(`cp -R "/Volumes/${volume}/Kiro.app" /Applications/`);
+    run(`hdiutil detach "/Volumes/${volume}" -quiet`);
+    run(`rm /tmp/${dmg}`);
+    ok("Kiro", version);
+    console.log("    Sign in with AWS in Kiro to configure SSO before continuing.");
+  } else {
+    ok("Kiro", out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString"));
+  }
+
+  step("Ollama");
+  if (!existsSync("/Applications/Ollama.app")) {
+    console.log("Installing...");
+    run("brew install --cask ollama");
+  } else {
+    ok("Ollama", out("defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString"));
+  }
+
+  step("Vowen");
+  if (!existsSync("/Applications/Vowen.app")) {
+    console.log("Installing...");
+    const page = out("curl -fsSL https://vowen.ai/");
+    const match = page.match(/Vowen-([\d.]+)-arm64\.dmg/);
+    if (!match) throw new Error("Could not determine latest Vowen version");
+    const version = match[1];
+    const dmg = `Vowen-${version}-arm64.dmg`;
+    run(`curl -fsSL "https://assets.vowen.ai/${dmg}" -o /tmp/${dmg}`);
+    run(`hdiutil attach /tmp/${dmg} -quiet`);
+    const volume = out("ls /Volumes | grep -i vowen");
+    run(`cp -R "/Volumes/${volume}/Vowen.app" /Applications/`);
+    run(`hdiutil detach "/Volumes/${volume}" -quiet`);
+    run(`rm /tmp/${dmg}`);
+    ok("Vowen", version);
+  } else {
+    ok("Vowen", out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString"));
+  }
+
+  step("Zoom");
+  if (!existsSync("/Applications/zoom.us.app")) {
+    console.log("Installing...");
+    run("brew install --cask zoom");
+  } else {
+    ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
+  }
 }
 
-// --- Apps ---
-
-step("Claude Desktop");
-if (!existsSync("/Applications/Claude.app")) {
-  console.log("Installing...");
-  run("brew install --cask claude");
-} else {
-  ok("Claude Desktop", out("defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString"));
-}
-
-step("Kiro");
-if (!existsSync("/Applications/Kiro.app")) {
-  console.log("Installing...");
-  const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
-  const page = out("curl -fsSL https://kiro.dev/downloads/");
-  const match = page.match(/Latest IDE([\d.]+)/);
-  if (!match) throw new Error("Could not determine latest Kiro version");
-  const version = match[1];
-  const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
-  const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
-  run(`curl -fsSL "${url}" -o /tmp/${dmg}`);
-  run(`hdiutil attach /tmp/${dmg} -quiet`);
-  const volume = out("ls /Volumes | grep -i kiro");
-  run(`cp -R "/Volumes/${volume}/Kiro.app" /Applications/`);
-  run(`hdiutil detach "/Volumes/${volume}" -quiet`);
-  run(`rm /tmp/${dmg}`);
-  ok("Kiro", version);
-  console.log("    Sign in with AWS in Kiro to configure SSO before continuing.");
-} else {
-  ok("Kiro", out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString"));
-}
-
-step("Ollama");
-if (!existsSync("/Applications/Ollama.app")) {
-  console.log("Installing...");
-  run("brew install --cask ollama");
-} else {
-  ok("Ollama", out("defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString"));
-}
-
-step("Vowen");
-if (!existsSync("/Applications/Vowen.app")) {
-  console.log("Installing...");
-  const page = out("curl -fsSL https://vowen.ai/");
-  const match = page.match(/Vowen-([\d.]+)-arm64\.dmg/);
-  if (!match) throw new Error("Could not determine latest Vowen version");
-  const version = match[1];
-  const dmg = `Vowen-${version}-arm64.dmg`;
-  run(`curl -fsSL "https://assets.vowen.ai/${dmg}" -o /tmp/${dmg}`);
-  run(`hdiutil attach /tmp/${dmg} -quiet`);
-  const volume = out("ls /Volumes | grep -i vowen");
-  run(`cp -R "/Volumes/${volume}/Vowen.app" /Applications/`);
-  run(`hdiutil detach "/Volumes/${volume}" -quiet`);
-  run(`rm /tmp/${dmg}`);
-  ok("Vowen", version);
-} else {
-  ok("Vowen", out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString"));
-}
-
-step("Zoom");
-if (!existsSync("/Applications/zoom.us.app")) {
-  console.log("Installing...");
-  run("brew install --cask zoom");
-} else {
-  ok("Zoom", out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion"));
-}
-
-// --- npm -g tools ---
+// --- npm globals ---
 
 step("AWS CDK");
 const cdkVersion = spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0];
@@ -295,8 +306,8 @@ const desiredClaudeSettings = {
     ],
   },
 };
-const changed = JSON.stringify(existingClaudeSettings) !== JSON.stringify(desiredClaudeSettings);
-if (changed) writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
+const settingsChanged = JSON.stringify(existingClaudeSettings) !== JSON.stringify(desiredClaudeSettings);
+if (settingsChanged) writeFileSync(claudeSettings, JSON.stringify(desiredClaudeSettings, null, 2) + "\n");
 for (const key of ["allow", "deny", "ask"] as const) {
   const existing = new Set(existingClaudeSettings.permissions?.[key] ?? []);
   for (const rule of desiredClaudeSettings.permissions[key] ?? [])
@@ -320,16 +331,16 @@ const gitconfig = expand("~/.gitconfig");
 const existingGitconfig = existsSync(gitconfig) ? readFileSync(gitconfig, "utf8") : "";
 let remainder = existingGitconfig;
 
-// credential helper — use macOS keychain
-const credentialLabel = "credential.helper = osxkeychain";
-if (/\[credential\][^[]*helper\s*=\s*osxkeychain/.test(remainder)) {
-  console.log(`    ✓ ${credentialLabel}`);
-} else {
-  console.log(green(`    + ${credentialLabel}`));
-  remainder += `[credential]\n\thelper = osxkeychain\n`;
+if (os.mac) {
+  const credentialLabel = "credential.helper = osxkeychain";
+  if (/\[credential\][^[]*helper\s*=\s*osxkeychain/.test(remainder)) {
+    console.log(`    ✓ ${credentialLabel}`);
+  } else {
+    console.log(green(`    + ${credentialLabel}`));
+    remainder += `[credential]\n\thelper = osxkeychain\n`;
+  }
 }
 
-// includeIf entries — per-directory identity, in sorted order
 const includes: Array<{ dir: string; path: string }> = [
   { dir: "~/@aws/", path: "~/.gitconfig-aws" },
   { dir: "~/@piotrek/", path: "~/.gitconfig-piotrek" },
@@ -350,11 +361,9 @@ for (const { dir, path } of includes) {
 }
 const sortedBlocks = includes.map(({ dir, path }) => `[includeIf "gitdir:${dir}"]\n\tpath = ${path}\n`).join("");
 
-// write back
 const gitconfigContents = sortedBlocks + remainder;
 if (gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
 
-// per-directory identity files
 for (const { path } of includes) {
   const fsPath = expand(path);
   if (!existsSync(fsPath)) writeFileSync(fsPath, "");
@@ -365,17 +374,20 @@ for (const { path } of includes) {
   }
 }
 
-// --- .zprofile ---
+// --- Shell profile ---
 
-step(".zprofile");
-ensureInZprofile(`eval "$(/opt/homebrew/bin/brew shellenv zsh)"`);
-ensureInZprofile(`eval "$(fnm env)"`);
-ensureInZprofile(`export AWS_REGION=eu-west-2`);
-ensureInZprofile(`export CLAUDE_CODE_USE_BEDROCK=1`);
-ensureInZprofile(`export GIT_CONFIG_NOSYSTEM=1`);
-ensureInZprofile(`export PATH="$HOME/.opencode/bin:$PATH"`);
-ensureInZprofile(`export WRANGLER_HOME="$HOME/.wrangler"`);
-ensureInZprofile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
+step(os.shell === "zsh" ? ".zprofile" : ".bash_profile");
+
+ensureInProfile(`eval "$(${os.brewPrefix}/bin/brew shellenv ${os.shell})"`);
+ensureInProfile(`eval "$(fnm env)"`);
+ensureInProfile(`export AWS_REGION=eu-west-2`);
+ensureInProfile(`export CLAUDE_CODE_USE_BEDROCK=1`);
+ensureInProfile(`export GIT_CONFIG_NOSYSTEM=1`);
+ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
+ensureInProfile(`export WRANGLER_HOME="$HOME/.wrangler"`);
+if (os.mac) {
+  ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
+}
 
 step("Done!");
-if (writeZprofile()) console.log("    ~/.zprofile was updated. Restart terminal or run: source ~/.zprofile");
+if (writeProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);

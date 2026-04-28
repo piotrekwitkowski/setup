@@ -1,6 +1,6 @@
 # setup
 
-Mac setup script. From a local clone:
+Cross-platform setup script for macOS and Linux. From a local clone:
 
 ```sh
 ./bootstrap.sh
@@ -23,11 +23,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | gh | CLI | `brew install gh` |
 | git-secrets | CLI | `brew install git-secrets` |
 | Go | language | `brew install go` |
-| Claude Desktop | app | `brew install --cask claude` |
-| Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
-| Ollama | app | `brew install --cask ollama` |
-| Vowen | app | dmg from [vowen.ai](https://vowen.ai) |
-| Zoom | app | `brew install --cask zoom` |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
 | Lighthouse | CLI | `npm install -g lighthouse` |
@@ -36,14 +31,25 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Wrangler | CLI | `npm install -g wrangler` |
 | GitHub MCP server | MCP | `claude mcp add --scope user` (remote server) |
 
+### macOS only
+
+| Tool | Type | Method |
+|---|---|---|
+| Claude Desktop | app | `brew install --cask claude` |
+| Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
+| Kiro CLI | app | `brew install --cask kiro-cli` |
+| Ollama | app | `brew install --cask ollama` |
+| Vowen | app | dmg from [vowen.ai](https://vowen.ai) |
+| Zoom | app | `brew install --cask zoom` |
+
 ## Claude Code configuration
 
 Configures `~/.claude/settings.json` with auto-approved permissions for readonly CLI commands and hooks that guard destructive operations behind confirmation prompts.
 
 ## Git configuration
 
-Ensures `~/.gitconfig` contains `includeIf` directives routing repos under `~/@aws/` and `~/@piotrek/` to per-context config files (`~/.gitconfig-aws`, `~/.gitconfig-piotrek`). Creates the files empty if missing and warns when they lack a `[user]` section — fill them in with your name and email.
+Ensures `~/.gitconfig` contains `includeIf` directives routing repos under `~/@aws/` and `~/@piotrek/` to per-context config files (`~/.gitconfig-aws`, `~/.gitconfig-piotrek`). Creates the files empty if missing and warns when they lack a `[user]` section — fill them in with your name and email. On macOS, configures the osxkeychain credential helper.
 
 ## Shell configuration
 
-Configures `~/.zprofile` with environment variables, PATH updates, and aliases.
+Configures `~/.zprofile` (macOS) or `~/.bash_profile` (Linux) with environment variables, PATH updates, and aliases.

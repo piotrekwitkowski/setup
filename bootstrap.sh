@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
-# Install Homebrew if missing (needed for fnm)
+OS="$(uname -s)"
+
+# Install Homebrew if missing
 if ! command -v brew &>/dev/null; then
   echo "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-export PATH="/opt/homebrew/bin:$PATH"
+if [[ "$OS" == "Darwin" ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
 
 # Install fnm if missing
 if ! command -v fnm &>/dev/null; then
