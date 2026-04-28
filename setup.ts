@@ -290,13 +290,13 @@ step("GitHub MCP server");
 const claudeJson = `${homedir()}/.claude.json`;
 const claudeConfig = existsSync(claudeJson) ? JSON.parse(readFileSync(claudeJson, "utf8")) : {};
 const mcpServers = claudeConfig.mcpServers ?? {};
-if (mcpServers.github?.url === "https://api.githubcopilot.com/mcp/") {
+if (mcpServers.github?.url === "https://api.githubcopilot.com/mcp/" && mcpServers.github?.type === "http") {
   console.log("    ✓ github → https://api.githubcopilot.com/mcp/");
 } else {
   console.log(`    ${red("github MCP server not configured")}`);
   issues++;
   if (fix) {
-    claudeConfig.mcpServers = { ...mcpServers, github: { url: "https://api.githubcopilot.com/mcp/" } };
+    claudeConfig.mcpServers = { ...mcpServers, github: { type: "http", url: "https://api.githubcopilot.com/mcp/" } };
     writeFileSync(claudeJson, JSON.stringify(claudeConfig, null, 2) + "\n");
     console.log(green("    + github → https://api.githubcopilot.com/mcp/"));
   }
