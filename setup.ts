@@ -183,7 +183,7 @@ for (const g of pipGlobals) {
   if (!v) {
     missing(g.name);
     issues++;
-    if (fix) run(`pip3 install ${g.pkg}`);
+    if (fix) run(`pip3 install --user ${g.pkg}`);
   } else {
     ok(g.pkg, v);
   }
@@ -221,6 +221,18 @@ if (npmOutdated) {
   console.log("    All global packages up to date");
 }
 
+step("pip globals outdated");
+const pipOutdated = JSON.parse(spawnSync("pip3 list --user --outdated --format=json", { shell: true }).stdout?.toString().trim() || "[]") as Array<{ name: string; version: string; latest_version: string }>;
+if (pipOutdated.length) {
+  for (const pkg of pipOutdated) {
+    console.log(`    ${yellow(`${pkg.name} ${pkg.version} → ${pkg.latest_version}`)}`);
+  }
+  issues += pipOutdated.length;
+  if (fix) for (const pkg of pipOutdated) run(`pip3 install --user --upgrade ${pkg.name}`);
+} else {
+  console.log("    All pip user packages up to date");
+}
+
 // --- MCP servers ---
 
 step("GitHub MCP server");
@@ -233,7 +245,8 @@ if (mcpServers.github?.url === "https://api.githubcopilot.com/mcp/") {
   console.log(`    ${red("github MCP server not configured")}`);
   issues++;
   if (fix) {
-    run("claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --scope user");
+    claudeConfig.mcpServers = { ...mcpServers, github: { url: "https://api.githubcopilot.com/mcp/" } };
+    writeFileSync(claudeJson, JSON.stringify(claudeConfig, null, 2) + "\n");
     console.log(green("    + github → https://api.githubcopilot.com/mcp/"));
   }
 }
