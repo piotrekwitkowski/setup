@@ -27,7 +27,7 @@ step("Homebrew");
 ok("brew", out("brew --version").split(" ")[1]);
 
 step("fnm");
-ok("fnm", out("fnm --version"));
+ok("fnm", out("fnm --version").replace("fnm ", ""));
 
 step("Node.js LTS");
 const currentNode = out("node --version").replace("v", "");
@@ -167,6 +167,28 @@ for (const g of npmGlobals) {
   }
 }
 
+// --- pip globals ---
+
+const pipVersion = (pkg: string) =>
+  spawnSync(`python3 -c "import ${pkg}; print(${pkg}.__version__)"`, { shell: true })
+    .stdout?.toString().trim();
+
+const pipGlobals: Array<{ name: string; pkg: string; version: () => string }> = [
+  { name: "boto3", pkg: "boto3", version: () => pipVersion("boto3") },
+];
+
+for (const g of pipGlobals) {
+  step(g.name);
+  const v = g.version();
+  if (!v) {
+    missing(g.name);
+    issues++;
+    if (fix) run(`pip3 install ${g.pkg}`);
+  } else {
+    ok(g.pkg, v);
+  }
+}
+
 // --- Outdated ---
 
 step("Homebrew outdated");
@@ -180,11 +202,21 @@ if (brewOutdated) {
 }
 
 step("npm globals outdated");
-const npmOutdated = spawnSync("npm outdated -g --long", { shell: true }).stdout?.toString().trim();
+const npmOutdated = spawnSync("npm outdated -g --parseable", { shell: true }).stdout?.toString().trim();
 if (npmOutdated) {
-  for (const line of npmOutdated.split("\n")) console.log(`    ${yellow(line)}`);
-  issues += npmOutdated.split("\n").length - 1;
-  if (fix) run("npm update -g");
+  const outdatedPkgs: string[] = [];
+  for (const line of npmOutdated.split("\n")) {
+    const parts = line.split(":");
+    const current = parts[2];
+    const latest = parts[3];
+    const name = current.replace(/@[^@]+$/, "");
+    const currentVer = current.split("@").pop();
+    const latestVer = latest.split("@").pop();
+    console.log(`    ${yellow(`${name} ${currentVer} → ${latestVer}`)}`);
+    outdatedPkgs.push(name);
+  }
+  issues += outdatedPkgs.length;
+  if (fix) for (const pkg of outdatedPkgs) run(`npm install -g ${pkg}`);
 } else {
   console.log("    All global packages up to date");
 }
