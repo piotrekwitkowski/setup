@@ -353,39 +353,25 @@ for (const { path } of includes) {
 // --- Shell profile ---
 
 const existingProfile = existsSync(os.profile) ? readFileSync(os.profile, "utf8") : "";
-const evals: string[] = [];
-const envs: string[] = [];
-const aliases: string[] = [];
+const missingEvals: string[] = [];
+const missingEnvs: string[] = [];
+const missingAliases: string[] = [];
 const ensureInProfile = (line: string) => {
   const already = existingProfile.includes(line);
   console.log(`    ${already ? "✓" : fix ? "+" : red("missing")} ${line}`);
-  if (!already && !fix) issues++;
-  if (line.startsWith("eval ")) {
-    if (!evals.includes(line)) evals.push(line);
-  } else if (line.startsWith("export ")) {
-    if (!envs.includes(line)) envs.push(line);
-  } else if (line.startsWith("alias ")) {
-    if (!aliases.includes(line)) aliases.push(line);
-  }
+  if (already) return;
+  if (!fix) issues++;
+  if (line.startsWith("eval ")) missingEvals.push(line);
+  else if (line.startsWith("export ")) missingEnvs.push(line);
+  else if (line.startsWith("alias ")) missingAliases.push(line);
 };
 
-const writeProfile = () => {
-  const newContents = [
-    ...evals,
-    "",
-    ...envs.sort(),
-    "",
-    ...aliases
-  ].join("\n") + "\n";
-
-  if (existingProfile === newContents) return false;
-
-  const oldLines = new Set(existingProfile.split("\n").filter(Boolean));
-  const newLines = new Set(newContents.split("\n").filter(Boolean));
-  for (const line of newLines) if (!oldLines.has(line)) console.log(green(`    + ${line}`));
-  for (const line of oldLines) if (!newLines.has(line)) console.log(`    - ${line}`);
-
-  writeFileSync(os.profile, newContents);
+const appendToProfile = () => {
+  const linesToAdd = [...missingEvals, ...missingEnvs.sort(), ...missingAliases];
+  if (linesToAdd.length === 0) return false;
+  const suffix = "\n" + linesToAdd.join("\n") + "\n";
+  for (const line of linesToAdd) console.log(green(`    + ${line}`));
+  writeFileSync(os.profile, existingProfile.trimEnd() + suffix);
   return true;
 };
 
@@ -402,7 +388,7 @@ if (os.mac) {
   ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
 }
 
-if (fix && writeProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);
+if (fix && appendToProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);
 
 // --- Summary ---
 
