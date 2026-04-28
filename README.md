@@ -29,7 +29,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | npm-check-updates | CLI | `npm install -g npm-check-updates` |
 | OpenCode | CLI | `npm install -g opencode-ai` |
 | Wrangler | CLI | `npm install -g wrangler` |
-| GitHub MCP server | MCP | `claude mcp add --scope user` (remote server) |
 
 ### macOS only
 
