@@ -7,7 +7,7 @@ const fix = process.argv.includes("--fix") || process.argv.includes("-f");
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
 const exists = (cmd: string) => spawnSync(`command -v ${cmd}`, { shell: true }).status === 0;
 const out = (cmd: string) => execSync(cmd).toString().trim();
-const spawnCollect = (cmd: string) => {
+const prefetch = (cmd: string) => {
   let buf = "";
   const child = spawn(cmd, { shell: true, stdio: ["ignore", "pipe", "ignore"] });
   child.stdout.on("data", (d: Buffer) => { buf += d.toString(); });
@@ -15,9 +15,11 @@ const spawnCollect = (cmd: string) => {
 };
 
 // Kick off slow network checks early, collect results later
-const checkBrewOutdated = spawnCollect("brew outdated --verbose");
-const checkNpmOutdated = spawnCollect("npm outdated -g --parseable");
-const checkPipOutdated = spawnCollect("pip3 list --user --outdated --format=json");
+const checkBrewOutdated = prefetch("brew outdated --verbose");
+const checkNpmOutdated = prefetch("npm outdated -g --parseable");
+const checkPipOutdated = prefetch("pip3 list --user --outdated --format=json");
+const checkKiroLatest = prefetch("curl -fsSL https://kiro.dev/downloads/");
+const checkVowenLatest = prefetch("curl -fsSL https://vowen.ai/");
 
 const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
@@ -97,7 +99,7 @@ if (os.mac) {
 
   step("Kiro IDE");
   const kiroInstalled = existsSync("/Applications/Kiro.app");
-  const kiroPage = out("curl -fsSL https://kiro.dev/downloads/");
+  const kiroPage = await checkKiroLatest;
   const kiroMatch = kiroPage.match(/Latest IDE([\d.]+)/);
   if (!kiroInstalled) {
     missing("Kiro IDE");
@@ -129,7 +131,7 @@ if (os.mac) {
 
   step("Vowen");
   const vowenInstalled = existsSync("/Applications/Vowen.app");
-  const vowenPage = out("curl -fsSL https://vowen.ai/");
+  const vowenPage = await checkVowenLatest;
   const vowenMatch = vowenPage.match(/Vowen-([\d.]+)-arm64\.dmg/);
   if (!vowenInstalled) {
     missing("Vowen");
