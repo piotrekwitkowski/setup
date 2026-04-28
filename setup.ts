@@ -10,16 +10,37 @@ const out = (cmd: string) => execSync(cmd).toString().trim();
 const prefetch = (cmd: string) => {
   let buf = "";
   const child = spawn(cmd, { shell: true, stdio: ["ignore", "pipe", "ignore"] });
-  child.stdout.on("data", (d: Buffer) => { buf += d.toString(); });
-  return new Promise<string>(r => child.on("close", () => r(buf.trim())));
+  child.stdout.on("data", (chunk: Buffer) => { buf += chunk.toString(); });
+  return new Promise<string>(resolve => child.on("close", () => resolve(buf.trim())));
 };
 
-// Kick off slow network checks early, collect results later
-const checkBrewOutdated = prefetch("brew outdated --verbose");
-const checkNpmOutdated = prefetch("npm outdated -g --parseable");
-const checkPipOutdated = prefetch("pip3 list --user --outdated --format=json");
-const checkKiroLatest = prefetch("curl -fsSL https://kiro.dev/downloads/");
-const checkVowenLatest = prefetch("curl -fsSL https://vowen.ai/");
+// Prefetch all slow checks immediately, await results where needed
+const prefetched = new Map<string, Promise<string>>();
+const prefetchAll = (...cmds: string[]) => cmds.forEach(cmd => prefetched.set(cmd, prefetch(cmd)));
+const get = (cmd: string) => prefetched.get(cmd)!;
+
+prefetchAll(
+  "brew outdated --verbose",
+  "npm outdated -g --parseable",
+  "pip3 list --user --outdated --format=json",
+  "curl -fsSL https://kiro.dev/downloads/",
+  "curl -fsSL https://vowen.ai/",
+  "aws --version",
+  "gh --version",
+  "brew list --versions git-secrets",
+  "go version",
+  "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
+  "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString",
+  "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
+  "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
+  "cdk --version",
+  "claude --version",
+  "lighthouse --version",
+  "ncu --version",
+  "opencode --version",
+  "wrangler --version",
+  `python3 -c "import boto3; print(boto3.__version__)"`,
+);
 
 const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
@@ -58,48 +79,60 @@ if (currentNode === latestLts) {
 
 // --- Brew CLIs ---
 
-const brewClis: Array<{ name: string; formula: string; version: () => string }> = [
-  { name: "aws", formula: "awscli", version: () => out("aws --version").split(" ")[0].split("/")[1] },
-  { name: "gh", formula: "gh", version: () => out("gh --version").split(" ")[2] },
-  { name: "git-secrets", formula: "git-secrets", version: () => out("brew list --versions git-secrets").split(" ")[1] },
-  { name: "go", formula: "go", version: () => out("go version").split(" ")[2].replace("go", "") },
+const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string }> = [
+  { name: "aws", formula: "awscli", versionCmd: "aws --version", parseVersion: output => output.split(" ")[0].split("/")[1] },
+  { name: "gh", formula: "gh", versionCmd: "gh --version", parseVersion: output => output.split(" ")[2] },
+  { name: "git-secrets", formula: "git-secrets", versionCmd: "brew list --versions git-secrets", parseVersion: output => output.split(" ")[1] },
+  { name: "go", formula: "go", versionCmd: "go version", parseVersion: output => output.split(" ")[2].replace("go", "") },
 ];
 
-for (const cli of brewClis) {
+const brewCliChecks = await Promise.all(brewClis.map(async cli => ({
+  ...cli,
+  installed: exists(cli.name),
+  version: await get(cli.versionCmd).catch(() => ""),
+})));
+
+for (const cli of brewCliChecks) {
   step(cli.name);
-  if (!exists(cli.name)) {
+  if (!cli.installed) {
     missing(cli.name);
     issues++;
     if (fix) run(`brew install ${cli.formula}`);
   } else {
-    ok(cli.name, cli.version());
+    ok(cli.name, cli.parseVersion(cli.version));
   }
 }
 
 // --- Mac-only apps ---
 
 if (os.mac) {
-  const caskApps: Array<{ name: string; appPath: string; cask: string; version: () => string }> = [
-    { name: "Claude Desktop", appPath: "/Applications/Claude.app", cask: "claude", version: () => out("defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString") },
-    { name: "Kiro CLI", appPath: "/Applications/Kiro CLI.app", cask: "kiro-cli", version: () => out("defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString") },
-    { name: "Ollama", appPath: "/Applications/Ollama.app", cask: "ollama", version: () => out("defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString") },
-    { name: "Zoom", appPath: "/Applications/zoom.us.app", cask: "zoom", version: () => out("defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion") },
+  const caskApps: Array<{ name: string; appPath: string; cask: string; versionCmd: string }> = [
+    { name: "Claude Desktop", appPath: "/Applications/Claude.app", cask: "claude", versionCmd: "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString" },
+    { name: "Kiro CLI", appPath: "/Applications/Kiro CLI.app", cask: "kiro-cli", versionCmd: "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString" },
+    { name: "Ollama", appPath: "/Applications/Ollama.app", cask: "ollama", versionCmd: "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString" },
+    { name: "Zoom", appPath: "/Applications/zoom.us.app", cask: "zoom", versionCmd: "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion" },
   ];
 
-  for (const app of caskApps) {
+  const caskChecks = await Promise.all(caskApps.map(async app => ({
+    ...app,
+    installed: existsSync(app.appPath),
+    version: await get(app.versionCmd).catch(() => ""),
+  })));
+
+  for (const app of caskChecks) {
     step(app.name);
-    if (!existsSync(app.appPath)) {
+    if (!app.installed) {
       missing(app.name);
       issues++;
       if (fix) run(`brew install --cask ${app.cask}`);
     } else {
-      ok(app.name, app.version());
+      ok(app.name, app.version);
     }
   }
 
   step("Kiro IDE");
   const kiroInstalled = existsSync("/Applications/Kiro.app");
-  const kiroPage = await checkKiroLatest;
+  const kiroPage = await get("curl -fsSL https://kiro.dev/downloads/");
   const kiroMatch = kiroPage.match(/Latest IDE([\d.]+)/);
   if (!kiroInstalled) {
     missing("Kiro IDE");
@@ -131,7 +164,7 @@ if (os.mac) {
 
   step("Vowen");
   const vowenInstalled = existsSync("/Applications/Vowen.app");
-  const vowenPage = await checkVowenLatest;
+  const vowenPage = await get("curl -fsSL https://vowen.ai/");
   const vowenMatch = vowenPage.match(/Vowen-([\d.]+)-arm64\.dmg/);
   if (!vowenInstalled) {
     missing("Vowen");
@@ -159,53 +192,58 @@ if (os.mac) {
 
 // --- npm globals ---
 
-const npmGlobals: Array<{ name: string; pkg: string; cmd: string; version: () => string }> = [
-  { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", version: () => spawnSync("cdk --version", { shell: true }).stdout?.toString().trim().split(" ")[0] },
-  { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", version: () => spawnSync("claude --version", { shell: true }).stdout?.toString().trim().split(" ")[0] },
-  { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", version: () => spawnSync("lighthouse --version", { shell: true }).stdout?.toString().trim() },
-  { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", version: () => spawnSync("ncu --version", { shell: true }).stdout?.toString().trim() },
-  { name: "OpenCode", pkg: "opencode-ai", cmd: "opencode", version: () => spawnSync("opencode --version", { shell: true }).stdout?.toString().trim() },
-  { name: "Wrangler", pkg: "wrangler", cmd: "wrangler", version: () => spawnSync("wrangler --version", { shell: true }).stdout?.toString().trim() },
+const npmGlobals: Array<{ name: string; pkg: string; cmd: string; versionCmd: string; parseVersion?: (output: string) => string }> = [
+  { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", versionCmd: "cdk --version", parseVersion: output => output.split(" ")[0] },
+  { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", versionCmd: "claude --version", parseVersion: output => output.split(" ")[0] },
+  { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", versionCmd: "lighthouse --version" },
+  { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", versionCmd: "ncu --version" },
+  { name: "OpenCode", pkg: "opencode-ai", cmd: "opencode", versionCmd: "opencode --version" },
+  { name: "Wrangler", pkg: "wrangler", cmd: "wrangler", versionCmd: "wrangler --version" },
 ];
 
-for (const g of npmGlobals) {
-  step(g.name);
-  const v = g.version();
-  if (!v) {
-    missing(g.name);
+const npmChecks = await Promise.all(npmGlobals.map(async pkg => ({
+  ...pkg,
+  version: await get(pkg.versionCmd).catch(() => ""),
+})));
+
+for (const pkg of npmChecks) {
+  step(pkg.name);
+  const version = pkg.parseVersion ? pkg.parseVersion(pkg.version) : pkg.version;
+  if (!version) {
+    missing(pkg.name);
     issues++;
-    if (fix) run(`npm install -g ${g.pkg}`);
+    if (fix) run(`npm install -g ${pkg.pkg}`);
   } else {
-    ok(g.cmd, v);
+    ok(pkg.cmd, version);
   }
 }
 
 // --- pip globals ---
 
-const pipVersion = (pkg: string) =>
-  spawnSync(`python3 -c "import ${pkg}; print(${pkg}.__version__)"`, { shell: true })
-    .stdout?.toString().trim();
-
-const pipGlobals: Array<{ name: string; pkg: string; version: () => string }> = [
-  { name: "boto3", pkg: "boto3", version: () => pipVersion("boto3") },
+const pipGlobals: Array<{ name: string; pkg: string }> = [
+  { name: "boto3", pkg: "boto3" },
 ];
 
-for (const g of pipGlobals) {
-  step(g.name);
-  const v = g.version();
-  if (!v) {
-    missing(g.name);
+const pipChecks = await Promise.all(pipGlobals.map(async pkg => ({
+  ...pkg,
+  version: await get(`python3 -c "import ${pkg.pkg}; print(${pkg.pkg}.__version__)"`).catch(() => ""),
+})));
+
+for (const pkg of pipChecks) {
+  step(pkg.name);
+  if (!pkg.version) {
+    missing(pkg.name);
     issues++;
-    if (fix) run(`pip3 install --user ${g.pkg}`);
+    if (fix) run(`pip3 install --user ${pkg.pkg}`);
   } else {
-    ok(g.pkg, v);
+    ok(pkg.pkg, pkg.version);
   }
 }
 
 // --- Outdated ---
 
 step("Homebrew outdated");
-const brewOutdated = await checkBrewOutdated;
+const brewOutdated = await get("brew outdated --verbose");
 if (brewOutdated) {
   for (const line of brewOutdated.split("\n")) console.log(`    ${yellow(line)}`);
   issues += brewOutdated.split("\n").length;
@@ -215,7 +253,7 @@ if (brewOutdated) {
 }
 
 step("npm globals outdated");
-const npmOutdated = await checkNpmOutdated;
+const npmOutdated = await get("npm outdated -g --parseable");
 if (npmOutdated) {
   const outdatedPkgs: string[] = [];
   for (const line of npmOutdated.split("\n")) {
@@ -235,7 +273,7 @@ if (npmOutdated) {
 }
 
 step("pip globals outdated");
-const pipOutdated = JSON.parse(await checkPipOutdated || "[]") as Array<{ name: string; version: string; latest_version: string }>;
+const pipOutdated = JSON.parse(await get("pip3 list --user --outdated --format=json") || "[]") as Array<{ name: string; version: string; latest_version: string }>;
 if (pipOutdated.length) {
   for (const pkg of pipOutdated) {
     console.log(`    ${yellow(`${pkg.name} ${pkg.version} → ${pkg.latest_version}`)}`);
