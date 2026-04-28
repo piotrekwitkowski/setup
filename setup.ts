@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from "child_process";
+import { execSync, spawn, spawnSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { homedir, platform } from "os";
 import { installDmg } from "./lib/dmg";
@@ -7,6 +7,17 @@ const fix = process.argv.includes("--fix") || process.argv.includes("-f");
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
 const exists = (cmd: string) => spawnSync(`command -v ${cmd}`, { shell: true }).status === 0;
 const out = (cmd: string) => execSync(cmd).toString().trim();
+const spawnCollect = (cmd: string) => {
+  let buf = "";
+  const child = spawn(cmd, { shell: true, stdio: ["ignore", "pipe", "ignore"] });
+  child.stdout.on("data", (d: Buffer) => { buf += d.toString(); });
+  return new Promise<string>(r => child.on("close", () => r(buf.trim())));
+};
+
+// Kick off slow network checks early, collect results later
+const checkBrewOutdated = spawnCollect("brew outdated --verbose");
+const checkNpmOutdated = spawnCollect("npm outdated -g --parseable");
+const checkPipOutdated = spawnCollect("pip3 list --user --outdated --format=json");
 
 const step = (label: string) => console.log(`\n>>> ${label}`);
 const ok = (name: string, version: string) => console.log(`    ${name} ${version}`);
@@ -192,7 +203,7 @@ for (const g of pipGlobals) {
 // --- Outdated ---
 
 step("Homebrew outdated");
-const brewOutdated = spawnSync("brew outdated --verbose", { shell: true }).stdout?.toString().trim();
+const brewOutdated = await checkBrewOutdated;
 if (brewOutdated) {
   for (const line of brewOutdated.split("\n")) console.log(`    ${yellow(line)}`);
   issues += brewOutdated.split("\n").length;
@@ -202,7 +213,7 @@ if (brewOutdated) {
 }
 
 step("npm globals outdated");
-const npmOutdated = spawnSync("npm outdated -g --parseable", { shell: true }).stdout?.toString().trim();
+const npmOutdated = await checkNpmOutdated;
 if (npmOutdated) {
   const outdatedPkgs: string[] = [];
   for (const line of npmOutdated.split("\n")) {
@@ -222,7 +233,7 @@ if (npmOutdated) {
 }
 
 step("pip globals outdated");
-const pipOutdated = JSON.parse(spawnSync("pip3 list --user --outdated --format=json", { shell: true }).stdout?.toString().trim() || "[]") as Array<{ name: string; version: string; latest_version: string }>;
+const pipOutdated = JSON.parse(await checkPipOutdated || "[]") as Array<{ name: string; version: string; latest_version: string }>;
 if (pipOutdated.length) {
   for (const pkg of pipOutdated) {
     console.log(`    ${yellow(`${pkg.name} ${pkg.version} → ${pkg.latest_version}`)}`);
