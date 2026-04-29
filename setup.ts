@@ -349,6 +349,7 @@ const desiredClaudeSettings = {
       "Bash(npm ls *)",
       "Bash(npm outdated)",
       "Bash(npm test)",
+      "Bash(ncu *)",
       "Bash(npx tsc *)",
       "Bash(npm view *)",
       "Bash(tail *)",
