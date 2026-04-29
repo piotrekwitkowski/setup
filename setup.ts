@@ -27,6 +27,7 @@ prefetchAll(
   "curl -fsSL https://vowen.ai/",
   "aws --version",
   "gh --version",
+  "glab --version",
   "brew list --versions git-secrets",
   "go version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
@@ -82,6 +83,7 @@ if (currentNode === latestLts) {
 const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string }> = [
   { name: "aws", formula: "awscli", versionCmd: "aws --version", parseVersion: output => output.split(" ")[0].split("/")[1] },
   { name: "gh", formula: "gh", versionCmd: "gh --version", parseVersion: output => output.split(" ")[2] },
+  { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
   { name: "git-secrets", formula: "git-secrets", versionCmd: "brew list --versions git-secrets", parseVersion: output => output.split(" ")[1] },
   { name: "go", formula: "go", versionCmd: "go version", parseVersion: output => output.split(" ")[2].replace("go", "") },
 ];
