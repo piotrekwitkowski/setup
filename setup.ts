@@ -472,6 +472,7 @@ const existingProfile = existsSync(os.profile) ? readFileSync(os.profile, "utf8"
 const missingEvals: string[] = [];
 const missingEnvs: string[] = [];
 const missingAliases: string[] = [];
+const missingFunctions: string[] = [];
 const ensureInProfile = (line: string) => {
   const already = existingProfile.includes(line);
   console.log(`    ${already ? "✓" : fix ? "+" : red("missing")} ${line}`);
@@ -480,10 +481,11 @@ const ensureInProfile = (line: string) => {
   if (line.startsWith("eval ")) missingEvals.push(line);
   else if (line.startsWith("export ")) missingEnvs.push(line);
   else if (line.startsWith("alias ")) missingAliases.push(line);
+  else missingFunctions.push(line);
 };
 
 const appendToProfile = () => {
-  const linesToAdd = [...missingEvals, ...missingEnvs.sort(), ...missingAliases];
+  const linesToAdd = [...missingEvals, ...missingEnvs.sort(), ...missingAliases, ...missingFunctions];
   if (linesToAdd.length === 0) return false;
   const suffix = "\n" + linesToAdd.join("\n") + "\n";
   for (const line of linesToAdd) console.log(green(`    + ${line}`));
