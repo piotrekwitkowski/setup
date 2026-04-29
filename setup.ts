@@ -103,6 +103,28 @@ for (const cli of brewCliChecks) {
   }
 }
 
+// --- Session Manager Plugin ---
+
+step("session-manager-plugin");
+const smpBinary = `${homedir()}/.local/sessionmanagerplugin/bin/session-manager-plugin`;
+if (existsSync(smpBinary)) {
+  ok("session-manager-plugin", out(`${smpBinary} --version`));
+} else {
+  missing("session-manager-plugin");
+  issues++;
+  if (fix) {
+    const arch = out("uname -m") === "arm64" ? "arm64" : "64bit";
+    const osPart = os.mac ? `mac_${arch}` : `ubuntu_${arch}`;
+    const url = `https://s3.amazonaws.com/session-manager-downloads/plugin/latest/${osPart}/sessionmanager-bundle.zip`;
+    run(`curl -fsSL "${url}" -o /tmp/sessionmanager-bundle.zip`);
+    run(`unzip -o /tmp/sessionmanager-bundle.zip -d /tmp/`);
+    run(`mkdir -p ${homedir()}/.local/sessionmanagerplugin/bin`);
+    run(`cp /tmp/sessionmanager-bundle/bin/session-manager-plugin ${smpBinary}`);
+    run(`rm -rf /tmp/sessionmanager-bundle /tmp/sessionmanager-bundle.zip`);
+    console.log(green("    + session-manager-plugin installed"));
+  }
+}
+
 // --- Mac-only apps ---
 
 if (os.mac) {
