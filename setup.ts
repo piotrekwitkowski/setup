@@ -413,6 +413,36 @@ for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [
   }
 }
 
+// --- glab config ---
+
+step("glab config (gitlab.aws.dev)");
+const glabConfig = `${homedir()}/Library/Application Support/glab-cli/config.yml`;
+if (existsSync(glabConfig)) {
+  const glabContents = readFileSync(glabConfig, "utf8");
+  const hasHost = glabContents.includes("gitlab.aws.dev:");
+  const hasCookieHeader = glabContents.includes("GITLAB_AWS_COOKIE");
+  const hasSshHost = glabContents.includes("ssh_host: ssh.gitlab.aws.dev");
+  if (hasHost && hasCookieHeader && hasSshHost) {
+    console.log("    ✓ gitlab.aws.dev with Cookie custom_headers + ssh_host");
+  } else if (hasHost && !hasCookieHeader) {
+    console.log(fix ? green("    + adding Cookie custom_header") : `    ${red("missing Cookie custom_header for gitlab.aws.dev")}`);
+    if (!fix) issues++;
+    if (fix) {
+      const patched = glabContents.replace(
+        /(\s+gitlab\.aws\.dev:\n\s+token: [^\n]+)/,
+        "$1\n        ssh_host: ssh.gitlab.aws.dev\n        custom_headers:\n            - name: Cookie\n              valueFromEnv: GITLAB_AWS_COOKIE"
+      );
+      writeFileSync(glabConfig, patched);
+    }
+  } else {
+    console.log(`    ${red("gitlab.aws.dev not configured — run: glab auth login --hostname gitlab.aws.dev --token <PAT>")}`);
+    issues++;
+  }
+} else {
+  console.log(`    ${red("glab config not found — run: glab auth login")}`);
+  issues++;
+}
+
 // --- git config ---
 
 step("git config");
@@ -472,6 +502,7 @@ const existingProfile = existsSync(os.profile) ? readFileSync(os.profile, "utf8"
 const missingEvals: string[] = [];
 const missingEnvs: string[] = [];
 const missingAliases: string[] = [];
+const missingFunctions: string[] = [];
 const ensureInProfile = (line: string) => {
   const already = existingProfile.includes(line);
   console.log(`    ${already ? "✓" : fix ? "+" : red("missing")} ${line}`);
@@ -480,10 +511,11 @@ const ensureInProfile = (line: string) => {
   if (line.startsWith("eval ")) missingEvals.push(line);
   else if (line.startsWith("export ")) missingEnvs.push(line);
   else if (line.startsWith("alias ")) missingAliases.push(line);
+  else missingFunctions.push(line);
 };
 
 const appendToProfile = () => {
-  const linesToAdd = [...missingEvals, ...missingEnvs.sort(), ...missingAliases];
+  const linesToAdd = [...missingEvals, ...missingEnvs.sort(), ...missingAliases, ...missingFunctions];
   if (linesToAdd.length === 0) return false;
   const suffix = "\n" + linesToAdd.join("\n") + "\n";
   for (const line of linesToAdd) console.log(green(`    + ${line}`));
@@ -502,6 +534,8 @@ ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInProfile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 if (os.mac) {
   ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
+  ensureInProfile(`gitlab-aws-auth() { local j=/tmp/gitlab_aws_cookies.txt; curl -s -L -c "$j" -b ~/.midway/cookie "https://gitlab.aws.dev/" >/dev/null 2>&1; if ! grep -q AWSELBAuthSessionCookie "$j" 2>/dev/null; then echo "Midway expired. Run: mwinit -f" >&2; return 1; fi; export GITLAB_AWS_COOKIE="$(awk '/AWSELBAuthSessionCookie/{printf "%s=%s; ",$6,$7} /_gitlab_session/{printf "%s=%s; ",$6,$7} /AWSALBAuthNonce/{printf "%s=%s",$6,$7}' "$j")"; }`);
+  ensureInProfile(`glab() { if [[ "\${*}" == *"gitlab.aws.dev"* || "$(git remote get-url origin 2>/dev/null)" == *"gitlab.aws.dev"* ]]; then if [ -z "$GITLAB_AWS_COOKIE" ]; then gitlab-aws-auth || return 1; fi; fi; command glab "$@"; }`);
 }
 
 if (fix && appendToProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);
