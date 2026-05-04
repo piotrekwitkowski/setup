@@ -365,6 +365,7 @@ const desiredClaudeSettings = {
       "Bash(npm show *)",
       "Bash(npm t)",
       "Bash(npm test)",
+      "Bash(npm version)",
       "Bash(npm why *)",
       "Bash(ncu *)",
       "Bash(npx astro *)",
