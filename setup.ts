@@ -369,6 +369,7 @@ const desiredClaudeSettings = {
       "Bash(npm why *)",
       "Bash(ncu *)",
       "Bash(npx astro *)",
+      "Bash(npx ncu *)",
       "Bash(npx tsc *)",
       "Bash(npx vite *)",
       "Bash(npm view *)",
