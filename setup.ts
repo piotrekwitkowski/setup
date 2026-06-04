@@ -26,11 +26,13 @@ prefetchAll(
   "curl -fsSL https://kiro.dev/downloads/",
   "curl -fsSL https://vowen.ai/",
   "aws --version",
+  "codex --version",
   "gh --version",
   "glab --version",
   "brew list --versions git-secrets",
   "go version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
+  "defaults read /Applications/Codex.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString",
   "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
@@ -82,6 +84,7 @@ if (currentNode === latestLts) {
 
 const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string }> = [
   { name: "aws", formula: "awscli", versionCmd: "aws --version", parseVersion: output => output.split(" ")[0].split("/")[1] },
+  { name: "codex", formula: "--cask codex", versionCmd: "codex --version", parseVersion: output => output.split(" ").pop() ?? output },
   { name: "gh", formula: "gh", versionCmd: "gh --version", parseVersion: output => output.split(" ")[2] },
   { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
   { name: "git-secrets", formula: "git-secrets", versionCmd: "brew list --versions git-secrets", parseVersion: output => output.split(" ")[1] },
@@ -132,6 +135,7 @@ if (existsSync(smpBinary)) {
 if (os.mac) {
   const caskApps: Array<{ name: string; appPath: string; cask: string; versionCmd: string }> = [
     { name: "Claude Desktop", appPath: "/Applications/Claude.app", cask: "claude", versionCmd: "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString" },
+    { name: "Codex", appPath: "/Applications/Codex.app", cask: "codex-app", versionCmd: "defaults read /Applications/Codex.app/Contents/Info.plist CFBundleShortVersionString" },
     { name: "Kiro CLI", appPath: "/Applications/Kiro CLI.app", cask: "kiro-cli", versionCmd: "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString" },
     { name: "Ollama", appPath: "/Applications/Ollama.app", cask: "ollama", versionCmd: "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString" },
     { name: "Zoom", appPath: "/Applications/zoom.us.app", cask: "zoom", versionCmd: "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion" },
