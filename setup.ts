@@ -488,6 +488,28 @@ for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [
   }
 }
 
+// --- Claude Code CLAUDE.md ---
+
+step("Claude Code CLAUDE.md");
+const claudeMd = `${homedir()}/.claude/CLAUDE.md`;
+if (existsSync(claudeMd)) {
+  console.log(`    ✓ ${claudeMd}`);
+} else {
+  console.log(fix ? green(`    + ${claudeMd}`) : `    ${red(`missing ${claudeMd}`)}`);
+  if (!fix) issues++;
+  if (fix) {
+    const result = spawnSync(
+      `gh api repos/piotrekwitkowski/piotrekwitkowski/readme -H 'Accept: application/vnd.github.raw'`,
+      { shell: true, encoding: "utf8" },
+    );
+    if (result.status === 0 && result.stdout) {
+      writeFileSync(claudeMd, result.stdout);
+    } else {
+      console.log(`    ${red("failed to fetch README — ensure gh is authenticated: gh auth login")}`);
+    }
+  }
+}
+
 // --- glab config ---
 
 step("glab config (gitlab.aws.dev)");
