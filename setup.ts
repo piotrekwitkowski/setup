@@ -322,6 +322,7 @@ const desiredClaudeSettings = {
   permissions: {
     ...existingClaudeSettings.permissions,
     allow: [
+      "Bash(basename *)",
       "Bash(cat *)",
       "Bash(cdk diff)",
       "Bash(cdk doctor)",
@@ -329,6 +330,8 @@ const desiredClaudeSettings = {
       "Bash(cdk synth)",
       "Bash(curl -s http://localhost*)",
       "Bash(diff *)",
+      "Bash(dirname *)",
+      "Bash(file *)",
       "Bash(find *)",
       "Bash(gh -R *)",
       "Bash(gh api *)",
@@ -386,6 +389,9 @@ const desiredClaudeSettings = {
       "Bash(npx tsc *)",
       "Bash(npx vite *)",
       "Bash(npm view *)",
+      "Bash(pwd)",
+      "Bash(realpath *)",
+      "Bash(stat *)",
       "Bash(tail *)",
       "Bash(tree *)",
       "Bash(wc *)",
