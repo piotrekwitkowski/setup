@@ -398,6 +398,8 @@ const desiredClaudeSettings = {
       "Bash(npx tsc *)",
       "Bash(npx vite *)",
       "Bash(npm view *)",
+      "Bash(oci session validate)",
+      "Bash(oci session validate *)",
       "Bash(pwd)",
       "Bash(realpath *)",
       "Bash(stat *)",
