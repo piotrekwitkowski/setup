@@ -326,6 +326,7 @@ const desiredClaudeSettings = {
   permissions: {
     ...existingClaudeSettings.permissions,
     allow: [
+      "Bash(aws sts get-caller-identity)",
       "Bash(basename *)",
       "Bash(cat *)",
       "Bash(cdk diff)",
