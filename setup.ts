@@ -222,7 +222,7 @@ if (os.mac) {
 
 const npmGlobals: Array<{ name: string; pkg: string; cmd: string; versionCmd: string; parseVersion?: (output: string) => string }> = [
   { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", versionCmd: "cdk --version", parseVersion: output => output.split(" ")[0] },
-  { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", versionCmd: "claude --version", parseVersion: output => output.split(" ")[0] },
+  { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", versionCmd: "claude --version", parseVersion: output => output.split(" ")[1] },
   { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", versionCmd: "lighthouse --version" },
   { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", versionCmd: "ncu --version" },
   { name: "OpenCode", pkg: "opencode-ai", cmd: "opencode", versionCmd: "opencode --version" },
