@@ -32,6 +32,7 @@ prefetchAll(
   "glab --version",
   "brew list --versions git-secrets",
   "go version",
+  "oci --version",
   "tofu --version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/Codex.app/Contents/Info.plist CFBundleShortVersionString",
@@ -92,6 +93,7 @@ const brewClis: Array<{ name: string; formula: string; versionCmd: string; parse
   { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
   { name: "git-secrets", formula: "git-secrets", versionCmd: "brew list --versions git-secrets", parseVersion: output => output.split(" ")[1] },
   { name: "go", formula: "go", versionCmd: "go version", parseVersion: output => output.split(" ")[2].replace("go", "") },
+  { name: "oci", formula: "oci-cli", versionCmd: "oci --version", parseVersion: output => output.trim() },
   { name: "tofu", formula: "opentofu", versionCmd: "tofu --version", parseVersion: output => output.split("\n")[0].split(" ")[1].replace("v", "") },
 ];
 
