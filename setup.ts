@@ -419,6 +419,7 @@ const desiredClaudeSettings = {
       "Bash(tree *)",
       "Bash(wc *)",
       "Bash(which *)",
+      "WebFetch(domain:aws.amazon.com)",
       "mcp__chrome-devtools__get_console_message",
       "mcp__chrome-devtools__get_network_request",
       "mcp__chrome-devtools__list_console_messages",
