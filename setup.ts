@@ -281,7 +281,7 @@ const brewOutdated = await get("brew outdated --verbose");
 if (brewOutdated) {
   for (const line of brewOutdated.split("\n")) console.log(`    ${yellow(line)}`);
   issues += brewOutdated.split("\n").length;
-  if (fix) run("brew upgrade");
+  if (fix) run("yes | brew upgrade");
 } else {
   console.log("    All formulae and casks up to date");
 }
