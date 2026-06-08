@@ -328,6 +328,7 @@ const desiredClaudeSettings = {
   permissions: {
     ...existingClaudeSettings.permissions,
     allow: [
+      "Bash(aws cloudformation describe-stack-events *)",
       "Bash(aws logs describe-log-groups *)",
       "Bash(aws rum list-app-monitors *)",
       "Bash(aws sts get-caller-identity)",
