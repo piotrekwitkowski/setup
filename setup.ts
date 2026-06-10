@@ -27,6 +27,7 @@ prefetchAll(
   "curl -fsSL https://vowen.ai/",
   "aws --version",
   "codex --version",
+  "deno --version",
   "gcloud --version",
   "gh --version",
   "glab --version",
@@ -41,6 +42,7 @@ prefetchAll(
   "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
   "cdk --version",
   "claude --version",
+  "jsr --version",
   "lighthouse --version",
   "ncu --version",
   "opencode --version",
@@ -88,6 +90,7 @@ if (currentNode === latestLts) {
 const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string }> = [
   { name: "aws", formula: "awscli", versionCmd: "aws --version", parseVersion: output => output.split(" ")[0].split("/")[1] },
   { name: "codex", formula: "--cask codex", versionCmd: "codex --version", parseVersion: output => output.split(" ").pop() ?? output },
+  { name: "deno", formula: "deno", versionCmd: "deno --version", parseVersion: output => output.split(" ")[1] },
   { name: "gcloud", formula: "--cask gcloud-cli", versionCmd: "gcloud --version", parseVersion: output => output.split("\n")[0].split(" ").pop() ?? output },
   { name: "gh", formula: "gh", versionCmd: "gh --version", parseVersion: output => output.split(" ")[2] },
   { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
@@ -229,6 +232,7 @@ if (os.mac) {
 const npmGlobals: Array<{ name: string; pkg: string; cmd: string; versionCmd: string; parseVersion?: (output: string) => string }> = [
   { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", versionCmd: "cdk --version", parseVersion: output => output.split(" ")[0] },
   { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", versionCmd: "claude --version", parseVersion: output => output.split(" ")[1] },
+  { name: "jsr", pkg: "jsr", cmd: "jsr", versionCmd: "jsr --version" },
   { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", versionCmd: "lighthouse --version" },
   { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", versionCmd: "ncu --version" },
   { name: "OpenCode", pkg: "opencode-ai", cmd: "opencode", versionCmd: "opencode --version" },
