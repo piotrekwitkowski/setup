@@ -349,6 +349,7 @@ const desiredClaudeSettings = {
       "Bash(aws cloudfront list-origin-request-policies *)",
       "Bash(aws cloudfront list-response-headers-policies *)",
       "Bash(aws cloudwatch describe-alarms *)",
+      "Bash(aws cloudwatch get-dashboard *)",
       "Bash(aws cloudwatch get-metric-data *)",
       "Bash(aws cloudwatch get-metric-statistics *)",
       "Bash(aws ec2 describe-instances *)",
