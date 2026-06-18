@@ -40,13 +40,6 @@ prefetchAll(
   "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString",
   "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
-  "cdk --version",
-  "claude --version",
-  "jsr --version",
-  "lighthouse --version",
-  "ncu --version",
-  "opencode --version",
-  "wrangler --version",
   `python3 -c "import boto3; print(boto3.__version__)"`,
 );
 
@@ -241,20 +234,22 @@ const npmGlobals: Array<{ name: string; pkg: string; cmd: string; versionCmd: st
 
 const npmChecks = await Promise.all(npmGlobals.map(async pkg => ({
   ...pkg,
-  version: await get(pkg.versionCmd).catch(() => ""),
+  version: await prefetch(pkg.versionCmd).catch(() => ""),
 })));
 
+const missingNpmPkgs: string[] = [];
 for (const pkg of npmChecks) {
   step(pkg.name);
   const version = pkg.parseVersion ? pkg.parseVersion(pkg.version) : pkg.version;
   if (!version) {
     missing(pkg.name);
     issues++;
-    if (fix) run(`npm install -g ${pkg.pkg}`);
+    missingNpmPkgs.push(pkg.pkg);
   } else {
     ok(pkg.cmd, version);
   }
 }
+if (fix && missingNpmPkgs.length) run(`npm install -g ${missingNpmPkgs.join(" ")}`);
 
 // --- pip globals ---
 
@@ -291,7 +286,7 @@ if (brewOutdated) {
 }
 
 step("npm globals outdated");
-const npmOutdated = await get("npm outdated -g --parseable");
+const npmOutdated = await prefetch("npm outdated -g --parseable");
 if (npmOutdated) {
   const outdatedPkgs: string[] = [];
   for (const line of npmOutdated.split("\n")) {
@@ -305,7 +300,7 @@ if (npmOutdated) {
     outdatedPkgs.push(name);
   }
   issues += outdatedPkgs.length;
-  if (fix) for (const pkg of outdatedPkgs) run(`npm install -g ${pkg}`);
+  if (fix) run(`npm install -g ${outdatedPkgs.join(" ")}`);
 } else {
   console.log("    All global packages up to date");
 }
@@ -341,15 +336,15 @@ const desiredClaudeSettings = {
       "Bash(aws cloudformation get-template *)",
       "Bash(aws cloudformation list-stack-resources *)",
       "Bash(aws cloudformation list-stacks *)",
+      "Bash(aws cloudfront get-cache-policy *)",
       "Bash(aws cloudfront get-distribution *)",
       "Bash(aws cloudfront get-distribution-config *)",
+      "Bash(aws cloudfront get-origin-request-policy *)",
+      "Bash(aws cloudfront get-response-headers-policy *)",
       "Bash(aws cloudfront list-cache-policies *)",
       "Bash(aws cloudfront list-distributions *)",
       "Bash(aws cloudfront list-functions *)",
       "Bash(aws cloudfront list-origin-request-policies *)",
-      "Bash(aws cloudfront get-cache-policy *)",
-      "Bash(aws cloudfront get-origin-request-policy *)",
-      "Bash(aws cloudfront get-response-headers-policy *)",
       "Bash(aws cloudfront list-response-headers-policies *)",
       "Bash(aws cloudwatch describe-alarms *)",
       "Bash(aws cloudwatch get-dashboard *)",
