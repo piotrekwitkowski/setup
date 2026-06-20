@@ -22,7 +22,7 @@ const get = (cmd: string) => prefetched.get(cmd)!;
 prefetchAll(
   "brew outdated --verbose",
   "npm outdated -g --parseable",
-  "pip3 list --user --outdated --format=json",
+
   "curl -fsSL https://kiro.dev/downloads/",
   "curl -fsSL https://vowen.ai/",
   "aws --version",
@@ -40,7 +40,7 @@ prefetchAll(
   "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString",
   "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
-  `python3 -c "import boto3; print(boto3.__version__)"`,
+
 );
 
 const step = (label: string) => console.log(`\n>>> ${label}`);
@@ -251,27 +251,7 @@ for (const pkg of npmChecks) {
 }
 if (fix && missingNpmPkgs.length) run(`npm install -g ${missingNpmPkgs.join(" ")}`);
 
-// --- pip globals ---
 
-const pipGlobals: Array<{ name: string; pkg: string }> = [
-  { name: "boto3", pkg: "boto3" },
-];
-
-const pipChecks = await Promise.all(pipGlobals.map(async pkg => ({
-  ...pkg,
-  version: await get(`python3 -c "import ${pkg.pkg}; print(${pkg.pkg}.__version__)"`).catch(() => ""),
-})));
-
-for (const pkg of pipChecks) {
-  step(pkg.name);
-  if (!pkg.version) {
-    missing(pkg.name);
-    issues++;
-    if (fix) run(`pip3 install --user ${pkg.pkg}`);
-  } else {
-    ok(pkg.pkg, pkg.version);
-  }
-}
 
 // --- Outdated ---
 
@@ -305,17 +285,7 @@ if (npmOutdated) {
   console.log("    All global packages up to date");
 }
 
-step("pip globals outdated");
-const pipOutdated = JSON.parse(await get("pip3 list --user --outdated --format=json") || "[]") as Array<{ name: string; version: string; latest_version: string }>;
-if (pipOutdated.length) {
-  for (const pkg of pipOutdated) {
-    console.log(`    ${yellow(`${pkg.name} ${pkg.version} → ${pkg.latest_version}`)}`);
-  }
-  issues += pipOutdated.length;
-  if (fix) for (const pkg of pipOutdated) run(`pip3 install --user --upgrade ${pkg.name}`);
-} else {
-  console.log("    All pip user packages up to date");
-}
+
 
 // --- Claude Code settings ---
 
