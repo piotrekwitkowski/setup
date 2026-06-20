@@ -24,7 +24,7 @@ prefetchAll(
   "npm outdated -g --parseable",
 
   "curl -fsSL https://kiro.dev/downloads/",
-  "curl -fsSL https://vowen.ai/",
+
   "aws --version",
   "codex --version",
   "deno --version",
@@ -189,33 +189,6 @@ if (os.mac) {
       }
     } else {
       ok("Kiro IDE", installed);
-    }
-  }
-
-  step("Vowen");
-  const vowenInstalled = existsSync("/Applications/Vowen.app");
-  const vowenPage = await get("curl -fsSL https://vowen.ai/");
-  const vowenMatch = vowenPage.match(/Vowen-([\d.]+)-arm64\.dmg/);
-  if (!vowenInstalled) {
-    missing("Vowen");
-    issues++;
-    if (fix && vowenMatch) {
-      const version = vowenMatch[1];
-      const dmg = `Vowen-${version}-arm64.dmg`;
-      installDmg("Vowen", `https://assets.vowen.ai/${dmg}`, dmg);
-    }
-  } else {
-    const installed = out("defaults read /Applications/Vowen.app/Contents/Info.plist CFBundleShortVersionString");
-    if (vowenMatch && vowenMatch[1] !== installed) {
-      console.log(`    ${yellow(`Vowen ${installed} → ${vowenMatch[1]} available`)}`);
-      issues++;
-      if (fix) {
-        const version = vowenMatch[1];
-        const dmg = `Vowen-${version}-arm64.dmg`;
-        installDmg("Vowen", `https://assets.vowen.ai/${dmg}`, dmg);
-      }
-    } else {
-      ok("Vowen", installed);
     }
   }
 }
