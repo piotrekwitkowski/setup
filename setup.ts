@@ -551,36 +551,6 @@ if (existsSync(claudeMd)) {
   }
 }
 
-// --- glab config ---
-
-step("glab config (gitlab.aws.dev)");
-const glabConfig = `${homedir()}/Library/Application Support/glab-cli/config.yml`;
-if (existsSync(glabConfig)) {
-  const glabContents = readFileSync(glabConfig, "utf8");
-  const hasHost = glabContents.includes("gitlab.aws.dev:");
-  const hasCookieHeader = glabContents.includes("GITLAB_AWS_COOKIE");
-  const hasSshHost = glabContents.includes("ssh_host: ssh.gitlab.aws.dev");
-  if (hasHost && hasCookieHeader && hasSshHost) {
-    console.log("    ✓ gitlab.aws.dev with Cookie custom_headers + ssh_host");
-  } else if (hasHost && !hasCookieHeader) {
-    console.log(fix ? green("    + adding Cookie custom_header") : `    ${red("missing Cookie custom_header for gitlab.aws.dev")}`);
-    if (!fix) issues++;
-    if (fix) {
-      const patched = glabContents.replace(
-        /(\s+gitlab\.aws\.dev:\n\s+token: [^\n]+)/,
-        "$1\n        ssh_host: ssh.gitlab.aws.dev\n        custom_headers:\n            - name: Cookie\n              valueFromEnv: GITLAB_AWS_COOKIE"
-      );
-      writeFileSync(glabConfig, patched);
-    }
-  } else {
-    console.log(`    ${red("gitlab.aws.dev not configured — run: glab auth login --hostname gitlab.aws.dev --token <PAT>")}`);
-    issues++;
-  }
-} else {
-  console.log(`    ${red("glab config not found — run: glab auth login")}`);
-  issues++;
-}
-
 // --- git config ---
 
 step("git config");
