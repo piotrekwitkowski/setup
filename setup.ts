@@ -572,6 +572,7 @@ if (os.mac) {
 
 const includes: Array<{ dir: string; path: string }> = [
   { dir: "~/@aws/", path: "~/.gitconfig-aws" },
+  { dir: "~/@brazil/", path: "~/.gitconfig-aws" },
   { dir: "~/@piotrek/", path: "~/.gitconfig-piotrek" },
 ].sort((a, b) => a.dir.localeCompare(b.dir));
 
