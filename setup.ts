@@ -620,7 +620,7 @@ const sortedBlocks = includes.map(({ dir, path }) => `[includeIf "gitdir:${dir}"
 const gitconfigContents = sortedBlocks + remainder;
 if (fix && gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
 
-for (const { path } of includes) {
+for (const path of [...new Set(includes.map(include => include.path))]) {
   const fsPath = expand(path);
   if (fix && !existsSync(fsPath)) writeFileSync(fsPath, "");
   if (existsSync(fsPath) && readFileSync(fsPath, "utf8").includes("[user]")) {
