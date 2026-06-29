@@ -426,6 +426,8 @@ const desiredClaudeSettings = {
       "Bash(tree *)",
       "Bash(wc *)",
       "Bash(which *)",
+      "Read(//private/tmp/**)",
+      "Read(//tmp/**)",
       "WebFetch(domain:aws.amazon.com)",
       "mcp__aws-sentral-mcp__fetch_account_details",
       "mcp__aws-sentral-mcp__fetch_account_summary",
