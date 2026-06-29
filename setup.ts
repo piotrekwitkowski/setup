@@ -417,6 +417,8 @@ const desiredClaudeSettings = {
       "Bash(tree *)",
       "Bash(wc *)",
       "Bash(which *)",
+      "Read(//private/tmp/**)",
+      "Read(//tmp/**)",
       "WebFetch(domain:aws.amazon.com)",
       "mcp__chrome-devtools__get_console_message",
       "mcp__chrome-devtools__get_network_request",
