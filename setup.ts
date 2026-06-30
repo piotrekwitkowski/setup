@@ -270,6 +270,7 @@ const desiredClaudeSettings = {
   permissions: {
     ...existingClaudeSettings.permissions,
     allow: [
+      "Bash(awk *)",
       "Bash(aws acm describe-certificate *)",
       "Bash(aws acm list-certificates *)",
       "Bash(aws apigateway get-rest-apis *)",
@@ -429,6 +430,14 @@ const desiredClaudeSettings = {
       "Read(//private/tmp/**)",
       "Read(//tmp/**)",
       "WebFetch(domain:aws.amazon.com)",
+      "WebFetch(domain:caniuse.com)",
+      "WebFetch(domain:cloudscape.design)",
+      "WebFetch(domain:datatracker.ietf.org)",
+      "WebFetch(domain:docs.aws.amazon.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:rfc-editor.org)",
       "mcp__aws-sentral-mcp__fetch_account_details",
       "mcp__aws-sentral-mcp__fetch_account_summary",
       "mcp__aws-sentral-mcp__fetch_campaign_details",
