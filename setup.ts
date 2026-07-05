@@ -488,7 +488,7 @@ for (const key of ["allow", "deny", "ask"] as const) {
       console.log(`    ✓ ${key} ${rule}`);
     } else {
       console.log(fix ? green(`    + ${key} ${rule}`) : `    ${red(`missing ${key} ${rule}`)}`);
-      if (!fix) issues++;
+      issues++;
     }
   }
 }
@@ -502,7 +502,7 @@ for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [
       console.log(`    ✓ hook ${label}`);
     } else {
       console.log(fix ? green(`    + hook ${label}`) : `    ${red(`missing hook ${label}`)}`);
-      if (!fix) issues++;
+      issues++;
     }
   }
 }
@@ -515,7 +515,7 @@ if (existsSync(claudeMd)) {
   console.log(`    ✓ ${claudeMd}`);
 } else {
   console.log(fix ? green(`    + ${claudeMd}`) : `    ${red(`missing ${claudeMd}`)}`);
-  if (!fix) issues++;
+  issues++;
   if (fix) {
     const result = spawnSync(
       `gh api repos/piotrekwitkowski/piotrekwitkowski/readme -H 'Accept: application/vnd.github.raw'`,
@@ -543,7 +543,7 @@ if (os.mac) {
     console.log(`    ✓ ${credentialLabel}`);
   } else {
     console.log(fix ? green(`    + ${credentialLabel}`) : `    ${red(`missing ${credentialLabel}`)}`);
-    if (!fix) issues++;
+    issues++;
     remainder += `[credential]\n\thelper = osxkeychain\n`;
   }
 }
@@ -559,7 +559,7 @@ for (const { dir, path } of includes) {
   const match = remainder.match(blockRegex);
   if (!match) {
     console.log(fix ? green(`    + ${label}`) : `    ${red(`missing ${label}`)}`);
-    if (!fix) issues++;
+    issues++;
   } else if (expand(match[1]) !== expand(path)) {
     console.log(green(`    ✓ ${label} (was ${match[1]})`));
   } else {
@@ -593,7 +593,7 @@ const ensureInProfile = (line: string) => {
   const already = existingProfile.includes(line);
   console.log(`    ${already ? "✓" : fix ? "+" : red("missing")} ${line}`);
   if (already) return;
-  if (!fix) issues++;
+  issues++;
   if (line.startsWith("eval ")) missingEvals.push(line);
   else if (line.startsWith("export ")) missingEnvs.push(line);
   else if (line.startsWith("alias ")) missingAliases.push(line);

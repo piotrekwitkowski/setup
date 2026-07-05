@@ -20,11 +20,19 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | fnm | Node version manager | `brew install fnm` |
 | Node.js LTS | runtime | `fnm install --lts` |
 | AWS CLI | CLI | `brew install awscli` |
+| Codex CLI | CLI | `brew install --cask codex` |
+| Deno | runtime | `brew install deno` |
+| gcloud | CLI | `brew install --cask gcloud-cli` |
 | gh | CLI | `brew install gh` |
+| glab | CLI | `brew install glab` |
 | git-secrets | CLI | `brew install git-secrets` |
 | Go | language | `brew install go` |
+| OCI CLI | CLI | `brew install oci-cli` |
+| OpenTofu | CLI | `brew install opentofu` |
+| Session Manager plugin | CLI | bundle from AWS S3 |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
+| jsr | CLI | `npm install -g jsr` |
 | Lighthouse | CLI | `npm install -g lighthouse` |
 | npm-check-updates | CLI | `npm install -g npm-check-updates` |
 | OpenCode | CLI | `npm install -g opencode-ai` |
@@ -35,10 +43,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Tool | Type | Method |
 |---|---|---|
 | Claude Desktop | app | `brew install --cask claude` |
+| Codex | app | `brew install --cask codex-app` |
 | Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
 | Kiro CLI | app | `brew install --cask kiro-cli` |
 | Ollama | app | `brew install --cask ollama` |
-| Vowen | app | dmg from [vowen.ai](https://vowen.ai) |
 | Zoom | app | `brew install --cask zoom` |
 
 ## Claude Code configuration

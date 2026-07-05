@@ -22,4 +22,4 @@ There is no build step, test suite, or linter. The script is run directly via `n
 
 **`setup.ts`** — Main script. Check-only by default; with `--fix` / `-f` it installs and upgrades. Cross-platform core: brew CLIs, npm globals, Claude Code settings, git config, and shell profile. Mac-only section: desktop apps (cask/dmg installs). Shell config writes to `~/.zprofile` on macOS and `~/.bash_profile` on Linux. Each tool checks missing → outdated → ok. Brew and npm outdated checks are grouped together near the end of the tools section. The profile writer collects lines into three arrays (evals, envs, aliases) and writes them in sorted order at the end.
 
-**`lib/dmg.ts`** — Shared helper for DMG-based app installs (download, mount, copy to /Applications, unmount, cleanup). Used by `setup.ts` for Kiro IDE and Vowen.
+**`lib/dmg.ts`** — Shared helper for DMG-based app installs (download, mount, copy to /Applications, unmount, cleanup). Used by `setup.ts` for the Kiro IDE.
