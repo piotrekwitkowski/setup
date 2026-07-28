@@ -631,6 +631,7 @@ ensureInProfile(`eval "$(fnm env)"`);
 ensureInProfile(`export AWS_REGION=eu-west-2`);
 ensureInProfile(`export CLAUDE_CODE_USE_BEDROCK=1`);
 ensureInProfile(`export GIT_CONFIG_NOSYSTEM=1`);
+ensureInProfile(`export GOPROXY=direct`);
 ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInProfile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 if (os.mac) {
