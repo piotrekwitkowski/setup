@@ -66,6 +66,10 @@ ok("fnm", out("fnm --version").replace("fnm ", ""));
 step("Node.js LTS");
 const currentNode = out("node --version").replace("v", "");
 const latestLts = out("fnm ls-remote --lts | tail -1").replace("v", "").split(" ")[0];
+// Set when this run installs a new Node. fnm gives each version its own
+// lib/node_modules and this shell's PATH still points at the old version, so
+// npm globals must be reinstalled into the new one explicitly (see below).
+let nodeUpgraded = false;
 if (currentNode === latestLts) {
   ok("node", `${currentNode} (latest LTS), npm ${out("npm --version")}`);
 } else {
@@ -74,6 +78,7 @@ if (currentNode === latestLts) {
   if (fix) {
     run("fnm install --lts");
     run("fnm default lts-latest");
+    nodeUpgraded = true;
   }
 }
 
@@ -220,7 +225,13 @@ for (const pkg of npmChecks) {
     ok(pkg.cmd, version);
   }
 }
-if (fix && missingNpmPkgs.length) run(`npm install -g ${missingNpmPkgs.join(" ")}`);
+if (fix && nodeUpgraded) {
+  // The checks above ran against the outgoing Node, so missingNpmPkgs says
+  // nothing about the new version. Install the whole list into it.
+  run(`fnm exec --using=lts-latest npm install -g ${npmGlobals.map(pkg => pkg.pkg).join(" ")}`);
+} else if (fix && missingNpmPkgs.length) {
+  run(`npm install -g ${missingNpmPkgs.join(" ")}`);
+}
 
 
 
@@ -251,7 +262,9 @@ if (npmOutdated) {
     outdatedPkgs.push(name);
   }
   issues += outdatedPkgs.length;
-  if (fix) run(`npm install -g ${outdatedPkgs.join(" ")}`);
+  // On a Node upgrade these versions describe the outgoing version's globals,
+  // which the fresh install above already superseded with @latest.
+  if (fix && !nodeUpgraded) run(`npm install -g ${outdatedPkgs.join(" ")}`);
 } else {
   console.log("    All global packages up to date");
 }
