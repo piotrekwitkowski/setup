@@ -2,8 +2,11 @@ import { execSync, spawn, spawnSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { homedir, platform } from "os";
 import { installDmg } from "./lib/dmg";
+import type { Extras } from "./lib/extras";
 
 const fix = process.argv.includes("--fix") || process.argv.includes("-f");
+const workFile = new URL("./setup.work.ts", import.meta.url);
+const extras: Extras = existsSync(workFile) ? (await import(workFile.href)).default : {};
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
 const exists = (cmd: string) => spawnSync(`command -v ${cmd}`, { shell: true }).status === 0;
 const out = (cmd: string) => execSync(cmd).toString().trim();
@@ -490,7 +493,34 @@ const desiredClaudeSettings = {
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__take_snapshot",
       "mcp__chrome-devtools__wait_for",
+      "mcp__slack-mcp__post_draft",
+      ...(extras.claudeAllow ?? []),
     ],
+  },
+  sandbox: {
+    ...existingClaudeSettings.sandbox,
+    // SSH remotes bypass the HTTP proxy, so fetch and pull run unsandboxed
+    excludedCommands: [
+      `${homedir()}/bin/pptx *`,
+      "git fetch *",
+      "git pull *",
+      "kiro *",
+    ],
+    network: {
+      ...existingClaudeSettings.sandbox?.network,
+      allowedDomains: [
+        "*.amazonaws.com",
+        "api.github.com",
+        "codeload.github.com",
+        "github.com",
+        "objects.githubusercontent.com",
+        "public.ecr.aws",
+        "raw.githubusercontent.com",
+        "registry.npmjs.org",
+        "registry.yarnpkg.com",
+        ...(extras.sandboxDomains ?? []),
+      ],
+    },
   },
   hooks: {
     ...existingClaudeSettings.hooks,
@@ -518,6 +548,15 @@ for (const key of ["allow", "deny", "ask"] as const) {
       console.log(fix ? green(`    + ${key} ${rule}`) : `    ${red(`missing ${key} ${rule}`)}`);
       issues++;
     }
+  }
+}
+const existingDomains = new Set(existingClaudeSettings.sandbox?.network?.allowedDomains ?? []);
+for (const domain of desiredClaudeSettings.sandbox.network.allowedDomains) {
+  if (existingDomains.has(domain)) {
+    console.log(`    ✓ sandbox domain ${domain}`);
+  } else {
+    console.log(fix ? green(`    + sandbox domain ${domain}`) : `    ${red(`missing sandbox domain ${domain}`)}`);
+    issues++;
   }
 }
 const existingHooks = existingClaudeSettings.hooks ?? {};
@@ -579,6 +618,7 @@ if (os.mac) {
 const includes: Array<{ dir: string; path: string }> = [
   { dir: "~/@aws/", path: "~/.gitconfig-aws" },
   { dir: "~/@piotrek/", path: "~/.gitconfig-piotrek" },
+  ...(extras.gitIncludes ?? []),
 ].sort((a, b) => a.dir.localeCompare(b.dir));
 
 for (const { dir, path } of includes) {
@@ -649,6 +689,7 @@ ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInProfile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 if (os.mac) {
   ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
+  for (const line of extras.macProfileLines ?? []) ensureInProfile(line);
 }
 
 if (fix && appendToProfile()) console.log(`    ${os.profile} was updated. Restart terminal or run: source ${os.profile}`);
