@@ -24,8 +24,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Deno | runtime | `brew install deno` |
 | gcloud | CLI | `brew install --cask gcloud-cli` |
 | gh | CLI | `brew install gh` |
-| glab | CLI | `brew install glab` |
 | git-secrets | CLI | `brew install git-secrets` |
+| glab | CLI | `brew install glab` |
 | Go | language | `brew install go` |
 | OCI CLI | CLI | `brew install oci-cli` |
 | OpenTofu | CLI | `brew install opentofu` |
