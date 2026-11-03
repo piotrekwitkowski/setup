@@ -8,6 +8,9 @@ const fix = process.argv.includes("--fix") || process.argv.includes("-f");
 const workFile = new URL("./setup.work.ts", import.meta.url);
 const extras: Extras = existsSync(workFile) ? (await import(workFile.href)).default : {};
 const run = (cmd: string) => spawnSync(cmd, { shell: true, stdio: "inherit" });
+// TERM=dumb makes brew print one line per finished download instead of redrawing progress frames,
+// which pile up in output panes that ignore cursor moves
+const brew = "TERM=dumb brew";
 const exists = (cmd: string) => spawnSync(`command -v ${cmd}`, { shell: true }).status === 0;
 const out = (cmd: string) => execSync(cmd).toString().trim();
 const prefetch = (cmd: string) => {
@@ -23,7 +26,8 @@ const prefetchAll = (...cmds: string[]) => cmds.forEach(cmd => prefetched.set(cm
 const get = (cmd: string) => prefetched.get(cmd)!;
 
 prefetchAll(
-  "brew outdated --verbose",
+  // brew outdated reads brew's cached package index, so refresh it first or new releases go unnoticed
+  "brew update --quiet >/dev/null; brew outdated --verbose",
   "npm outdated -g --parseable",
 
   "curl -fsSL https://kiro.dev/downloads/",
@@ -36,10 +40,10 @@ prefetchAll(
   "glab --version",
   "brew list --versions git-secrets",
   "go version",
+  "kiro-cli --version",
   "oci --version",
   "tofu --version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
-  "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString",
   "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
 
@@ -87,7 +91,7 @@ if (currentNode === latestLts) {
 
 // --- Brew CLIs ---
 
-const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string }> = [
+const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string; mac?: boolean }> = [
   { name: "aws", formula: "awscli", versionCmd: "aws --version", parseVersion: output => output.split(" ")[0].split("/")[1] },
   { name: "codex", formula: "--cask codex", versionCmd: "codex --version", parseVersion: output => output.split(" ").pop() ?? output },
   { name: "deno", formula: "deno", versionCmd: "deno --version", parseVersion: output => output.split(" ")[1] },
@@ -96,11 +100,12 @@ const brewClis: Array<{ name: string; formula: string; versionCmd: string; parse
   { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
   { name: "git-secrets", formula: "git-secrets", versionCmd: "brew list --versions git-secrets", parseVersion: output => output.split(" ")[1] },
   { name: "go", formula: "go", versionCmd: "go version", parseVersion: output => output.split(" ")[2].replace("go", "") },
+  { name: "kiro-cli", formula: "--cask kiro-cli", versionCmd: "kiro-cli --version", parseVersion: output => output.split(" ")[1], mac: true },
   { name: "oci", formula: "oci-cli", versionCmd: "oci --version", parseVersion: output => output.trim() },
   { name: "tofu", formula: "opentofu", versionCmd: "tofu --version", parseVersion: output => output.split("\n")[0].split(" ")[1].replace("v", "") },
 ];
 
-const brewCliChecks = await Promise.all(brewClis.map(async cli => ({
+const brewCliChecks = await Promise.all(brewClis.filter(cli => os.mac || !cli.mac).map(async cli => ({
   ...cli,
   installed: exists(cli.name),
   version: await get(cli.versionCmd).catch(() => ""),
@@ -111,7 +116,7 @@ for (const cli of brewCliChecks) {
   if (!cli.installed) {
     missing(cli.name);
     issues++;
-    if (fix) run(`brew install ${cli.formula}`);
+    if (fix) run(`${brew} install ${cli.formula}`);
   } else {
     ok(cli.name, cli.parseVersion(cli.version));
   }
@@ -144,7 +149,6 @@ if (existsSync(smpBinary)) {
 if (os.mac) {
   const caskApps: Array<{ name: string; appPath: string; cask: string; versionCmd: string }> = [
     { name: "Claude Desktop", appPath: "/Applications/Claude.app", cask: "claude", versionCmd: "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString" },
-    { name: "Kiro CLI", appPath: "/Applications/Kiro CLI.app", cask: "kiro-cli", versionCmd: "defaults read '/Applications/Kiro CLI.app/Contents/Info.plist' CFBundleShortVersionString" },
     { name: "Ollama", appPath: "/Applications/Ollama.app", cask: "ollama", versionCmd: "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString" },
     { name: "Zoom", appPath: "/Applications/zoom.us.app", cask: "zoom", versionCmd: "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion" },
   ];
@@ -160,7 +164,7 @@ if (os.mac) {
     if (!app.installed) {
       missing(app.name);
       issues++;
-      if (fix) run(`brew install --cask ${app.cask}`);
+      if (fix) run(`${brew} install --cask ${app.cask}`);
     } else {
       ok(app.name, app.version);
     }
@@ -241,11 +245,11 @@ if (fix && nodeUpgraded) {
 // --- Outdated ---
 
 step("Homebrew outdated");
-const brewOutdated = await get("brew outdated --verbose");
+const brewOutdated = await get("brew update --quiet >/dev/null; brew outdated --verbose");
 if (brewOutdated) {
   for (const line of brewOutdated.split("\n")) console.log(`    ${yellow(line)}`);
   issues += brewOutdated.split("\n").length;
-  if (fix) run("yes | brew upgrade");
+  if (fix) run(`yes | ${brew} upgrade`);
 } else {
   console.log("    All formulae and casks up to date");
 }
@@ -519,7 +523,7 @@ const desiredClaudeSettings = {
         "registry.npmjs.org",
         "registry.yarnpkg.com",
         ...(extras.sandboxDomains ?? []),
-      ],
+      ].sort(),
     },
   },
   hooks: {
