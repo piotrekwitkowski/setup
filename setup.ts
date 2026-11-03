@@ -506,19 +506,27 @@ const desiredClaudeSettings = {
     // SSH remotes bypass the HTTP proxy, so fetch and pull run unsandboxed
     excludedCommands: [
       `${homedir()}/bin/pptx *`,
+      "git -C * fetch *",
+      "git -C * pull *",
       "git fetch *",
       "git pull *",
       "kiro *",
     ],
     network: {
       ...existingClaudeSettings.sandbox?.network,
+      // tsx opens a local IPC socket
+      allowLocalBinding: true,
       allowedDomains: [
         "*.amazonaws.com",
         "api.github.com",
+        "aws.amazon.com",
         "codeload.github.com",
+        "docs.aws.amazon.com",
+        "files.pythonhosted.org",
         "github.com",
         "objects.githubusercontent.com",
         "public.ecr.aws",
+        "pypi.org",
         "raw.githubusercontent.com",
         "registry.npmjs.org",
         "registry.yarnpkg.com",
@@ -689,6 +697,7 @@ ensureInProfile(`export AWS_REGION=eu-west-2`);
 ensureInProfile(`export CLAUDE_CODE_USE_BEDROCK=1`);
 ensureInProfile(`export GIT_CONFIG_NOSYSTEM=1`);
 ensureInProfile(`export GOPROXY=direct`);
+ensureInProfile(`export HOMEBREW_NO_ANALYTICS=1`);
 ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 ensureInProfile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 if (os.mac) {
