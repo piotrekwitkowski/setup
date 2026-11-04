@@ -22,6 +22,7 @@ export default {
     ],
     npm: [
       { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", versionCmd: "cdk --version", parseVersion: output => output.split(" ")[0] },
+      { name: "Chrome DevTools MCP", pkg: "chrome-devtools-mcp", cmd: "chrome-devtools-mcp", versionCmd: "chrome-devtools-mcp --version" },
       { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", versionCmd: "claude --version", parseVersion: output => output.split(" ")[1] },
       { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", versionCmd: "lighthouse --version" },
       { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", versionCmd: "ncu --version" },
@@ -248,6 +249,9 @@ export default {
       },
     ],
   },
+  claudeMcp: [
+    { name: "chrome-devtools", command: "chrome-devtools-mcp" },
+  ],
   claudeMdReadme: "piotrekwitkowski/piotrekwitkowski",
   gitIncludes: [
     { dir: "~/@piwit/", path: "~/.gitconfig-piotrek", user: { name: "Piotrek", email: "piotrekwitkowski@users.noreply.github.com" } },

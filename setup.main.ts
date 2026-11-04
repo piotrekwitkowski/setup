@@ -45,10 +45,14 @@ export type Programs = { apps?: App[]; clis?: Cli[]; npm?: NpmPackage[] };
 
 export type ClaudeHook = { matcher?: string; hooks: Array<{ type: "command"; command: string }> };
 
+// stdio MCP server, registered with `claude mcp add -s user` when ~/.claude.json doesn't list `name`
+export type ClaudeMcp = { name: string; command: string; args?: string[] };
+
 export type Profile = {
   programs?: Programs;
   claudeAllow?: string[];
   claudeHooks?: Record<string, ClaudeHook[]>;
+  claudeMcp?: ClaudeMcp[];
   // GitHub "owner/repo" whose README is installed as ~/.claude/CLAUDE.md
   claudeMdReadme?: string;
   gitIncludes?: GitInclude[];
@@ -83,6 +87,7 @@ const profile = {
   },
   claudeAllow: strings(p => p.claudeAllow),
   claudeHooks,
+  claudeMcp: byName(p => p.claudeMcp),
   claudeMdReadme: profiles.reduce<string | undefined>((value, p) => p.claudeMdReadme ?? value, undefined),
   gitIncludes: profiles.flatMap(p => p.gitIncludes ?? []),
   macProfileLines: strings(p => p.macProfileLines),
@@ -324,6 +329,21 @@ for (const [event, matchers] of Object.entries(desiredClaudeSettings.hooks) as [
       issues++;
     }
   }
+}
+
+// --- Claude Code MCP servers ---
+
+step("Claude Code MCP servers");
+const claudeJson = `${homedir()}/.claude.json`;
+const existingMcp = existsSync(claudeJson) ? JSON.parse(readFileSync(claudeJson, "utf8")).mcpServers ?? {} : {};
+for (const server of profile.claudeMcp) {
+  if (existingMcp[server.name]) {
+    console.log(`    ✓ ${server.name}`);
+    continue;
+  }
+  console.log(fix ? green(`    + ${server.name}`) : `    ${red(`missing ${server.name}`)}`);
+  issues++;
+  if (fix) run(`claude mcp add -s user ${server.name} -- ${[server.command, ...(server.args ?? [])].join(" ")}`);
 }
 
 // --- Claude Code CLAUDE.md ---

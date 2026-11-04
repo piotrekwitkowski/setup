@@ -33,6 +33,7 @@ What `setup.personal.ts` currently lists:
 | Go | language | `brew install go` |
 | OpenTofu | CLI | `brew install opentofu` |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
+| Chrome DevTools MCP | MCP server | `npm install -g chrome-devtools-mcp` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
 | Lighthouse | CLI | `npm install -g lighthouse` |
 | npm-check-updates | CLI | `npm install -g npm-check-updates` |
@@ -53,6 +54,8 @@ What `setup.personal.ts` currently lists:
 ## Claude Code
 
 `~/.claude/settings.json` gets the profiles' allow rules, hooks, sandbox domains and sandbox excluded commands. The allow list is replaced, so a rule you add by hand disappears on the next `-f` run unless it is in a profile.
+
+Each `claudeMcp` entry is a stdio MCP server. When `~/.claude.json` doesn't list its name, setup registers it for every project with `claude mcp add -s user <name> -- <command> <args>`. It never removes or changes a server that is already there. Install the server's program through `programs` in the same profile.
 
 If `~/.claude/CLAUDE.md` is missing, setup fetches it from the README of the GitHub repo named in `claudeMdReadme`. Run `gh auth login` first.
 
