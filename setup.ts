@@ -36,6 +36,7 @@ prefetchAll(
   "glab --version",
   "go version",
   "kiro-cli --version",
+  "session-manager-plugin --version",
   "tofu --version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString",
@@ -94,6 +95,7 @@ const brewClis: Array<{ name: string; formula: string; versionCmd: string; parse
   { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
   { name: "go", formula: "go", versionCmd: "go version", parseVersion: output => output.split(" ")[2].replace("go", "") },
   { name: "kiro-cli", formula: "--cask kiro-cli", versionCmd: "kiro-cli --version", parseVersion: output => output.split(" ")[1], mac: true },
+  { name: "session-manager-plugin", formula: "--cask session-manager-plugin", versionCmd: "session-manager-plugin --version", parseVersion: output => output, mac: true },
   { name: "tofu", formula: "opentofu", versionCmd: "tofu --version", parseVersion: output => output.split("\n")[0].split(" ")[1].replace("v", "") },
 ];
 
@@ -111,28 +113,6 @@ for (const cli of brewCliChecks) {
     if (fix) run(`${brew} install ${cli.formula}`);
   } else {
     ok(cli.name, cli.parseVersion(cli.version));
-  }
-}
-
-// --- Session Manager Plugin ---
-
-step("session-manager-plugin");
-const smpBinary = `${homedir()}/.local/sessionmanagerplugin/bin/session-manager-plugin`;
-if (existsSync(smpBinary)) {
-  ok("session-manager-plugin", out(`${smpBinary} --version`));
-} else {
-  missing("session-manager-plugin");
-  issues++;
-  if (fix) {
-    const arch = out("uname -m") === "arm64" ? "arm64" : "64bit";
-    const osPart = os.mac ? `mac_${arch}` : `ubuntu_${arch}`;
-    const url = `https://s3.amazonaws.com/session-manager-downloads/plugin/latest/${osPart}/sessionmanager-bundle.zip`;
-    run(`curl -fsSL "${url}" -o /tmp/sessionmanager-bundle.zip`);
-    run(`unzip -o /tmp/sessionmanager-bundle.zip -d /tmp/`);
-    run(`mkdir -p ${homedir()}/.local/sessionmanagerplugin/bin`);
-    run(`cp /tmp/sessionmanager-bundle/bin/session-manager-plugin ${smpBinary}`);
-    run(`rm -rf /tmp/sessionmanager-bundle /tmp/sessionmanager-bundle.zip`);
-    console.log(green("    + session-manager-plugin installed"));
   }
 }
 

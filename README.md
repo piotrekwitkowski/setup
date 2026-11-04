@@ -21,7 +21,6 @@ cd ~/@piwit/setup
 | glab | CLI | `brew install glab` |
 | Go | language | `brew install go` |
 | OpenTofu | CLI | `brew install opentofu` |
-| Session Manager plugin | CLI | bundle from AWS S3 |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
 | Lighthouse | CLI | `npm install -g lighthouse` |
@@ -38,6 +37,7 @@ cd ~/@piwit/setup
 | Kiro | app | `brew install --cask kiro` |
 | Kiro CLI | CLI | `brew install --cask kiro-cli` |
 | Ollama | app | `brew install --cask ollama` |
+| Session Manager plugin | CLI | `brew install --cask session-manager-plugin` |
 | Zoom | app | `brew install --cask zoom` |
 
 ## Claude Code configuration
