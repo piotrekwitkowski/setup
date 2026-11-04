@@ -1,7 +1,6 @@
 import { execSync, spawn, spawnSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { homedir, platform } from "os";
-import { installDmg } from "./lib/dmg";
 import type { Extras } from "./lib/extras";
 
 const fix = process.argv.includes("--fix") || process.argv.includes("-f");
@@ -30,8 +29,6 @@ prefetchAll(
   "brew update --quiet >/dev/null; brew outdated --verbose",
   "npm outdated -g --parseable",
 
-  "curl -fsSL https://kiro.dev/downloads/",
-
   "aws --version",
   "codex --version",
   "gh --version",
@@ -41,6 +38,7 @@ prefetchAll(
   "kiro-cli --version",
   "tofu --version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
+  "defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion",
 
@@ -143,6 +141,7 @@ if (existsSync(smpBinary)) {
 if (os.mac) {
   const caskApps: Array<{ name: string; appPath: string; cask: string; versionCmd: string }> = [
     { name: "Claude Desktop", appPath: "/Applications/Claude.app", cask: "claude", versionCmd: "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString" },
+    { name: "Kiro IDE", appPath: "/Applications/Kiro.app", cask: "kiro", versionCmd: "defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString" },
     { name: "Ollama", appPath: "/Applications/Ollama.app", cask: "ollama", versionCmd: "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString" },
     { name: "Zoom", appPath: "/Applications/zoom.us.app", cask: "zoom", versionCmd: "defaults read /Applications/zoom.us.app/Contents/Info.plist CFBundleVersion" },
   ];
@@ -161,38 +160,6 @@ if (os.mac) {
       if (fix) run(`${brew} install --cask ${app.cask}`);
     } else {
       ok(app.name, app.version);
-    }
-  }
-
-  step("Kiro IDE");
-  const kiroInstalled = existsSync("/Applications/Kiro.app");
-  const kiroPage = await get("curl -fsSL https://kiro.dev/downloads/");
-  const kiroMatch = kiroPage.match(/Latest IDE([\d.]+)/);
-  if (!kiroInstalled) {
-    missing("Kiro IDE");
-    issues++;
-    if (fix && kiroMatch) {
-      const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
-      const version = kiroMatch[1];
-      const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
-      const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
-      installDmg("Kiro", url, dmg);
-      console.log("    Sign in with AWS in Kiro to configure SSO before continuing.");
-    }
-  } else {
-    const installed = out("defaults read /Applications/Kiro.app/Contents/Info.plist CFBundleShortVersionString");
-    if (kiroMatch && kiroMatch[1] !== installed) {
-      console.log(`    ${yellow(`Kiro IDE ${installed} → ${kiroMatch[1]} available`)}`);
-      issues++;
-      if (fix) {
-        const arch = out("uname -m") === "arm64" ? "arm64" : "x64";
-        const version = kiroMatch[1];
-        const dmg = `kiro-ide-${version}-stable-darwin-${arch}.dmg`;
-        const url = `https://prod.download.desktop.kiro.dev/releases/stable/darwin-${arch}/signed/${version}/${dmg}`;
-        installDmg("Kiro", url, dmg);
-      }
-    } else {
-      ok("Kiro IDE", installed);
     }
   }
 }
@@ -688,7 +655,6 @@ ensureInProfile(`export GOPROXY=direct`);
 ensureInProfile(`export HOMEBREW_NO_ANALYTICS=1`);
 ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
 if (os.mac) {
-  ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
   for (const line of extras.macProfileLines ?? []) ensureInProfile(line);
 }
 

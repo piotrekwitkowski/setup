@@ -39,7 +39,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Claude Desktop | app | `brew install --cask claude` |
 | Codex | app | `brew install --cask codex-app` |
 | Codex CLI | CLI | `brew install --cask codex` |
-| Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
+| Kiro | app | `brew install --cask kiro` |
 | Kiro CLI | CLI | `brew install --cask kiro-cli` |
 | Ollama | app | `brew install --cask ollama` |
 | Zoom | app | `brew install --cask zoom` |
