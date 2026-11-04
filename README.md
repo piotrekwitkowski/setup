@@ -46,7 +46,7 @@ Configures `~/.claude/settings.json` with auto-approved permissions for readonly
 
 ## Git configuration
 
-Ensures `~/.gitconfig` contains `includeIf` directives routing repos under `~/@aws/` and `~/@piotrek/` to per-context config files (`~/.gitconfig-aws`, `~/.gitconfig-piotrek`). Creates the files empty if missing and warns when they lack a `[user]` section — fill them in with your name and email. On macOS, configures the osxkeychain credential helper.
+Ensures `~/.gitconfig` has an `includeIf` rule for each git include: `~/@piwit/` loads `~/.gitconfig-piotrek`, plus any `gitIncludes` from `setup.work.ts`. When an include names a user, setup writes that `[user]` name and email into its file; otherwise it creates the file empty and warns. It also sets `user.useConfigOnly = true`, so git refuses to commit outside those folders instead of guessing an identity. On macOS, configures the osxkeychain credential helper.
 
 ## Shell configuration
 

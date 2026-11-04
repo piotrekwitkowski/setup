@@ -1,7 +1,7 @@
 import { execSync, spawn, spawnSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { homedir, platform } from "os";
-import type { Extras } from "./lib/extras";
+import type { Extras, GitInclude } from "./lib/extras";
 
 const fix = process.argv.includes("--fix") || process.argv.includes("-f");
 const workFile = new URL("./setup.work.ts", import.meta.url);
@@ -562,9 +562,18 @@ if (os.mac) {
   }
 }
 
-const includes: Array<{ dir: string; path: string }> = [
-  { dir: "~/@aws/", path: "~/.gitconfig-aws" },
-  { dir: "~/@piotrek/", path: "~/.gitconfig-piotrek" },
+// Without this, repos outside the includeIf folders get an identity guessed from login and hostname
+const useConfigOnlyLabel = "user.useConfigOnly = true";
+if (/\[user\][^[]*useConfigOnly\s*=\s*true/i.test(remainder)) {
+  console.log(`    ✓ ${useConfigOnlyLabel}`);
+} else {
+  console.log(fix ? green(`    + ${useConfigOnlyLabel}`) : `    ${red(`missing ${useConfigOnlyLabel}`)}`);
+  issues++;
+  remainder += `[user]\n\tuseConfigOnly = true\n`;
+}
+
+const includes: GitInclude[] = [
+  { dir: "~/@piwit/", path: "~/.gitconfig-piotrek", user: { name: "Piotrek", email: "piotrekwitkowski@users.noreply.github.com" } },
   ...(extras.gitIncludes ?? []),
 ].sort((a, b) => a.dir.localeCompare(b.dir));
 
@@ -587,14 +596,30 @@ const sortedBlocks = includes.map(({ dir, path }) => `[includeIf "gitdir:${dir}"
 const gitconfigContents = sortedBlocks + remainder;
 if (fix && gitconfigContents !== existingGitconfig) writeFileSync(gitconfig, gitconfigContents);
 
-for (const path of [...new Set(includes.map(include => include.path))]) {
+// One entry per included file; the first include that names a user decides that file's identity
+const includeFiles = new Map<string, GitInclude["user"]>();
+for (const { path, user } of includes) includeFiles.set(path, includeFiles.get(path) ?? user);
+
+for (const [path, user] of includeFiles) {
   const fsPath = expand(path);
-  if (fix && !existsSync(fsPath)) writeFileSync(fsPath, "");
-  if (existsSync(fsPath) && readFileSync(fsPath, "utf8").includes("[user]")) {
-    console.log(`    ✓ ${path}`);
-  } else {
-    console.log(`    ${yellow(`! ${path} — add [user] name and email`)}`);
+  const existing = existsSync(fsPath) ? readFileSync(fsPath, "utf8") : "";
+  if (!user) {
+    if (fix && !existsSync(fsPath)) writeFileSync(fsPath, "");
+    if (existing.includes("[user]")) console.log(`    ✓ ${path}`);
+    else console.log(`    ${yellow(`! ${path} — add [user] name and email`)}`);
+    continue;
   }
+  const label = `${path} — ${user.name} <${user.email}>`;
+  const userBlock = `[user]\n\tname = ${user.name}\n\temail = ${user.email}\n`;
+  if (existing.includes(userBlock)) {
+    console.log(`    ✓ ${label}`);
+    continue;
+  }
+  console.log(fix ? green(`    + ${label}`) : `    ${red(`missing ${label}`)}`);
+  issues++;
+  // Replace an existing [user] section (header plus its indented lines), otherwise prepend one
+  const userSection = /\[user\]\n(?:[ \t]+[^\n]*\n?)*/;
+  if (fix) writeFileSync(fsPath, userSection.test(existing) ? existing.replace(userSection, userBlock) : userBlock + existing);
 }
 
 // --- Shell profile ---
