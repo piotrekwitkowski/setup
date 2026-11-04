@@ -32,4 +32,4 @@ fnm use lts-latest >/dev/null 2>&1 || true
 
 # Hand off to TypeScript
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-npx --yes tsx "$SCRIPT_DIR/setup.ts" "$@"
+npx --yes tsx "$SCRIPT_DIR/setup.main.ts" "$@"

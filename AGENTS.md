@@ -14,12 +14,12 @@ Cross-platform setup script that provisions a macOS or Linux machine. Check-only
 ./bootstrap.sh -f       # shorthand for --fix
 ```
 
-There is no build step, test suite, or linter. The script is run directly via `npx --yes tsx setup.ts` (invoked by `bootstrap.sh`). Type-check with `npx tsc --noEmit`.
+There is no build step, test suite, or linter. The script is run directly via `npx --yes tsx setup.main.ts` (invoked by `bootstrap.sh`). Type-check with `npx tsc --noEmit`.
 
 ## Architecture
 
-**`bootstrap.sh`** — Minimal bash shim that detects the OS, ensures Homebrew (with the correct prefix for macOS vs Linux), fnm, and Node LTS exist, then hands off to `setup.ts` with `"$@"`.
+**`bootstrap.sh`** — Minimal bash shim that detects the OS, ensures Homebrew (with the correct prefix for macOS vs Linux), fnm, and Node LTS exist, then hands off to `setup.main.ts` with `"$@"`.
 
-**`setup.ts`** — Main script. Check-only by default; with `--fix` / `-f` it installs and upgrades. Cross-platform core: brew CLIs, npm globals, Claude Code settings, git config, and shell profile. Mac-only section: desktop apps (cask installs). Shell config writes to `~/.zprofile` on macOS and `~/.bash_profile` on Linux. Each tool checks missing → outdated → ok. Brew and npm outdated checks are grouped together near the end of the tools section. The profile writer collects lines into three arrays (evals, envs, aliases) and writes them in sorted order at the end.
+**`setup.main.ts`** — Main script. Check-only by default; with `--fix` / `-f` it installs and upgrades. Cross-platform core: brew CLIs, npm globals, Claude Code settings, git config, and shell profile. Mac-only section: desktop apps (cask installs). Shell config writes to `~/.zprofile` on macOS and `~/.bash_profile` on Linux. Each tool checks missing → outdated → ok. Brew and npm outdated checks are grouped together near the end of the tools section. The profile writer collects lines into three arrays (evals, envs, aliases) and writes them in sorted order at the end.
 
-**`setup.work.ts`** — Optional, gitignored. Default-exports an `Extras` object (type in `lib/extras.ts`) whose lists `setup.ts` appends to its own Claude allow rules, sandbox domains, git includes, and macOS profile lines. Keep anything that shouldn't be public there.
+**`setup.work.ts`** — Optional, gitignored. Default-exports an `Extras` object (type in `lib/extras.ts`) whose lists `setup.main.ts` appends to its own Claude allow rules, sandbox domains, git includes, and macOS profile lines. Keep anything that shouldn't be public there.
