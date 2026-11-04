@@ -1,15 +1,11 @@
 # setup
 
-Cross-platform setup script for macOS and Linux. From a local clone:
+Cross-platform setup script for macOS and Linux. Clone it, then run `bootstrap.sh` from the clone:
 
 ```sh
+git clone https://github.com/piotrekwitkowski/setup.git ~/@piwit/setup
+cd ~/@piwit/setup
 ./bootstrap.sh
-```
-
-Or on a new machine:
-
-```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/bootstrap.sh)
 ```
 
 ## What gets installed
