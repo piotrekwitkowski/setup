@@ -21,22 +21,17 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | Node.js LTS | runtime | `fnm install --lts` |
 | AWS CLI | CLI | `brew install awscli` |
 | Codex CLI | CLI | `brew install --cask codex` |
-| Deno | runtime | `brew install deno` |
-| gcloud | CLI | `brew install --cask gcloud-cli` |
 | gh | CLI | `brew install gh` |
 | git-secrets | CLI | `brew install git-secrets` |
 | glab | CLI | `brew install glab` |
 | Go | language | `brew install go` |
-| OCI CLI | CLI | `brew install oci-cli` |
 | OpenTofu | CLI | `brew install opentofu` |
 | Session Manager plugin | CLI | bundle from AWS S3 |
 | AWS CDK | CLI | `npm install -g aws-cdk` |
 | Claude Code | CLI | `npm install -g @anthropic-ai/claude-code` |
-| jsr | CLI | `npm install -g jsr` |
 | Lighthouse | CLI | `npm install -g lighthouse` |
 | npm-check-updates | CLI | `npm install -g npm-check-updates` |
 | OpenCode | CLI | `npm install -g opencode-ai` |
-| Wrangler | CLI | `npm install -g wrangler` |
 
 ### macOS only
 

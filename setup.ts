@@ -34,14 +34,11 @@ prefetchAll(
 
   "aws --version",
   "codex --version",
-  "deno --version",
-  "gcloud --version",
   "gh --version",
   "brew list --versions git-secrets",
   "glab --version",
   "go version",
   "kiro-cli --version",
-  "oci --version",
   "tofu --version",
   "defaults read /Applications/Claude.app/Contents/Info.plist CFBundleShortVersionString",
   "defaults read /Applications/Ollama.app/Contents/Info.plist CFBundleShortVersionString",
@@ -94,14 +91,11 @@ if (currentNode === latestLts) {
 const brewClis: Array<{ name: string; formula: string; versionCmd: string; parseVersion: (output: string) => string; mac?: boolean }> = [
   { name: "aws", formula: "awscli", versionCmd: "aws --version", parseVersion: output => output.split(" ")[0].split("/")[1] },
   { name: "codex", formula: "--cask codex", versionCmd: "codex --version", parseVersion: output => output.split(" ").pop() ?? output },
-  { name: "deno", formula: "deno", versionCmd: "deno --version", parseVersion: output => output.split(" ")[1] },
-  { name: "gcloud", formula: "--cask gcloud-cli", versionCmd: "gcloud --version", parseVersion: output => output.split("\n")[0].split(" ").pop() ?? output },
   { name: "gh", formula: "gh", versionCmd: "gh --version", parseVersion: output => output.split(" ")[2] },
   { name: "git-secrets", formula: "git-secrets", versionCmd: "brew list --versions git-secrets", parseVersion: output => output.split(" ")[1] },
   { name: "glab", formula: "glab", versionCmd: "glab --version", parseVersion: output => output.split(" ")[2] },
   { name: "go", formula: "go", versionCmd: "go version", parseVersion: output => output.split(" ")[2].replace("go", "") },
   { name: "kiro-cli", formula: "--cask kiro-cli", versionCmd: "kiro-cli --version", parseVersion: output => output.split(" ")[1], mac: true },
-  { name: "oci", formula: "oci-cli", versionCmd: "oci --version", parseVersion: output => output.trim() },
   { name: "tofu", formula: "opentofu", versionCmd: "tofu --version", parseVersion: output => output.split("\n")[0].split(" ")[1].replace("v", "") },
 ];
 
@@ -208,11 +202,9 @@ if (os.mac) {
 const npmGlobals: Array<{ name: string; pkg: string; cmd: string; versionCmd: string; parseVersion?: (output: string) => string }> = [
   { name: "AWS CDK", pkg: "aws-cdk", cmd: "cdk", versionCmd: "cdk --version", parseVersion: output => output.split(" ")[0] },
   { name: "Claude Code", pkg: "@anthropic-ai/claude-code", cmd: "claude", versionCmd: "claude --version", parseVersion: output => output.split(" ")[1] },
-  { name: "jsr", pkg: "jsr", cmd: "jsr", versionCmd: "jsr --version" },
   { name: "Lighthouse", pkg: "lighthouse", cmd: "lighthouse", versionCmd: "lighthouse --version" },
   { name: "npm-check-updates", pkg: "npm-check-updates", cmd: "ncu", versionCmd: "ncu --version" },
   { name: "OpenCode", pkg: "opencode-ai", cmd: "opencode", versionCmd: "opencode --version" },
-  { name: "Wrangler", pkg: "wrangler", cmd: "wrangler", versionCmd: "wrangler --version" },
 ];
 
 const npmChecks = await Promise.all(npmGlobals.map(async pkg => ({
@@ -377,8 +369,6 @@ const desiredClaudeSettings = {
       "Bash(dirname *)",
       "Bash(file *)",
       "Bash(find *)",
-      "Bash(gcloud auth list)",
-      "Bash(gcloud config list)",
       "Bash(gh -R *)",
       "Bash(gh api *)",
       "Bash(gh auth status *)",
@@ -450,8 +440,6 @@ const desiredClaudeSettings = {
       "Bash(npx npm-check-updates *)",
       "Bash(npx tsc *)",
       "Bash(npx vite *)",
-      "Bash(oci session validate)",
-      "Bash(oci session validate *)",
       "Bash(pwd)",
       "Bash(realpath *)",
       "Bash(stat *)",
@@ -699,7 +687,6 @@ ensureInProfile(`export GIT_CONFIG_NOSYSTEM=1`);
 ensureInProfile(`export GOPROXY=direct`);
 ensureInProfile(`export HOMEBREW_NO_ANALYTICS=1`);
 ensureInProfile(`export PATH="$HOME/.opencode/bin:$PATH"`);
-ensureInProfile(`export WRANGLER_HOME="$HOME/.wrangler"`);
 if (os.mac) {
   ensureInProfile(`alias kiro='/Applications/Kiro.app/Contents/Resources/app/bin/code'`);
   for (const line of extras.macProfileLines ?? []) ensureInProfile(line);
