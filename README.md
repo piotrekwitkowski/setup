@@ -20,7 +20,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 | fnm | Node version manager | `brew install fnm` |
 | Node.js LTS | runtime | `fnm install --lts` |
 | AWS CLI | CLI | `brew install awscli` |
-| Codex CLI | CLI | `brew install --cask codex` |
 | gh | CLI | `brew install gh` |
 | git-secrets | CLI | `brew install git-secrets` |
 | glab | CLI | `brew install glab` |
@@ -39,6 +38,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/piotrekwitkowski/setup/main/
 |---|---|---|
 | Claude Desktop | app | `brew install --cask claude` |
 | Codex | app | `brew install --cask codex-app` |
+| Codex CLI | CLI | `brew install --cask codex` |
 | Kiro | app | dmg from [kiro.dev](https://kiro.dev) |
 | Kiro CLI | CLI | `brew install --cask kiro-cli` |
 | Ollama | app | `brew install --cask ollama` |
